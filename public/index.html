@@ -1126,7 +1126,9 @@
       document.getElementById("questionCategory").textContent = question.category;
       document.getElementById("questionText").textContent = question.question;
       document.getElementById("followUpText").textContent = question.followUp;
-      document.getElementById("followUpText").classList.add("hidden");
+      // Honor a follow-up that was already revealed (e.g. after a reconnect).
+      document.getElementById("followUpText").classList.toggle(
+        "hidden", !(state.room && state.room.followUpRevealed));
       document.getElementById("answeringPlayer").textContent = isMyTurn()
         ? "You answer — they'll respond"
         : activePlayerName() + " answers — your call";

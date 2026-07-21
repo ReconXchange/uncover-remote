@@ -423,12 +423,15 @@ function serializeRoom(room) {
     players: room.players.map(({ id, name }) => ({ id, name })),
     mode: room.mode,
     pack: room.pack,
-    categories: packCategories(room.pack),
+    // While a question is open, keep the wheel labels on the deck it was drawn
+    // from; a mid-turn deck switch only affects the next draw.
+    categories: packCategories(room.currentQuestion ? (room.drawPack || room.pack) : room.pack),
     packs: packMeta(),
     round: room.round,
     score: room.score,
     currentPlayerId: room.currentPlayerId,
     currentQuestion: room.currentQuestion,
+    followUpRevealed: Boolean(room.followUpRevealed),
     usedCards: room.usedCards,
     deeperUnlocked: room.round >= 5,
     readyIds: ready,
@@ -534,10 +537,12 @@ io.on("connection", (socket) => {
       players: [],
       mode: "wheel",
       pack: DEFAULT_PACK,
+      drawPack: DEFAULT_PACK,
       round: 0,
       score: 0,
       currentPlayerId: null,
       currentQuestion: null,
+      followUpRevealed: false,
       usedCards: [],
       ready: new Set(),
       cleanupTimer: null
@@ -611,6 +616,8 @@ io.on("connection", (socket) => {
 
     room.mode = "wheel";
     room.round += 1;
+    room.drawPack = room.pack;
+    room.followUpRevealed = false;
     room.currentQuestion = { category, question, followUp };
 
     io.to(room.code).emit("wheel-spun", {
@@ -638,6 +645,8 @@ io.on("connection", (socket) => {
     room.mode = "cards";
     room.usedCards.push(index);
     room.round += 1;
+    room.drawPack = room.pack;
+    room.followUpRevealed = false;
     room.currentQuestion = { category, question, followUp };
 
     io.to(room.code).emit("card-picked", {
@@ -666,6 +675,8 @@ io.on("connection", (socket) => {
     const [question, followUp] = randomItem(DEEP_QUESTIONS[level]);
     room.mode = "deep";
     room.round += 1;
+    room.drawPack = room.pack;
+    room.followUpRevealed = false;
     room.currentQuestion = { category: level, question, followUp };
 
     io.to(room.code).emit("deep-picked", {
@@ -686,6 +697,7 @@ io.on("connection", (socket) => {
 
     room.currentPlayerId = nextPlayerId(room);
     room.currentQuestion = null;
+    room.followUpRevealed = false;
 
     io.to(room.code).emit("turn-completed", {
       connected: Boolean(connected),
@@ -702,6 +714,7 @@ io.on("connection", (socket) => {
 
     room.currentPlayerId = nextPlayerId(room);
     room.currentQuestion = null;
+    room.followUpRevealed = false;
 
     io.to(room.code).emit("turn-passed", {
       currentPlayerId: room.currentPlayerId
@@ -710,10 +723,13 @@ io.on("connection", (socket) => {
   });
 
   // The listener can reveal the follow-up prompt for both phones at once.
+  // Persist it in room state so a reconnecting phone still shows the follow-up.
   socket.on("reveal-followup", () => {
     const room = getRoomForSocket(socket);
     if (!canJudge(socket, room)) return;
+    room.followUpRevealed = true;
     io.to(room.code).emit("followup-revealed");
+    emitState(room);
   });
 
   socket.on("disconnect", () => {
@@ -725,6 +741,7 @@ io.on("connection", (socket) => {
     if (room.currentPlayerId === socket.id) {
       room.currentPlayerId = room.players[0]?.id || null;
       room.currentQuestion = null;
+      room.followUpRevealed = false;
     }
 
     if (room.players.length === 0) {
