@@ -927,6 +927,13 @@
       return state.room && state.room.currentPlayerId === state.myId;
     }
 
+    // I'm the listener when there are two players and it isn't my turn to answer.
+    function amListener() {
+      return Boolean(state.room && state.room.players.length === 2 &&
+        state.room.currentPlayerId && !isMyTurn() &&
+        state.room.players.some((player) => player.id === state.myId));
+    }
+
     function otherPlayerName() {
       if (!state.room) return "the other player";
       const other = state.room.players.find((player) => player.id !== state.myId);
@@ -1081,9 +1088,14 @@
         button.disabled = !canChoose || !room.deeperUnlocked;
       });
 
-      document.querySelectorAll("#questionActions button").forEach((button) => {
-        button.disabled = !isMyTurn() || !state.currentQuestion;
-      });
+      // The answerer keeps Pass; the listener judges the answer (follow-up,
+      // answered, great answer) so no one grades their own response.
+      const hasQuestion = Boolean(state.currentQuestion);
+      const listening = amListener();
+      document.getElementById("passButton").disabled = !hasQuestion || !isMyTurn();
+      document.getElementById("followUpButton").disabled = !hasQuestion || !listening;
+      document.getElementById("answeredButton").disabled = !hasQuestion || !listening;
+      document.getElementById("connectedButton").disabled = !hasQuestion || !listening;
 
       if (room.currentQuestion && !state.currentQuestion && !state.pendingReveal) {
         revealQuestion(room.currentQuestion);
@@ -1115,7 +1127,9 @@
       document.getElementById("questionText").textContent = question.question;
       document.getElementById("followUpText").textContent = question.followUp;
       document.getElementById("followUpText").classList.add("hidden");
-      document.getElementById("answeringPlayer").textContent = activePlayerName() + " answers";
+      document.getElementById("answeringPlayer").textContent = isMyTurn()
+        ? "You answer — they'll respond"
+        : activePlayerName() + " answers — your call";
 
       questionCard.classList.remove("hiding");
       void questionCard.offsetWidth;
@@ -1267,19 +1281,19 @@
     });
 
     document.getElementById("followUpButton").addEventListener("click", () => {
+      if (!amListener() || !state.currentQuestion) return;
       playClick();
-      if (!state.currentQuestion) return;
-      document.getElementById("followUpText").classList.remove("hidden");
+      socket.emit("reveal-followup");
     });
 
     document.getElementById("answeredButton").addEventListener("click", () => {
-      if (!isMyTurn() || !state.currentQuestion) return;
+      if (!amListener() || !state.currentQuestion) return;
       playClick();
       socket.emit("complete-turn", { connected: false });
     });
 
     document.getElementById("connectedButton").addEventListener("click", () => {
-      if (!isMyTurn() || !state.currentQuestion) return;
+      if (!amListener() || !state.currentQuestion) return;
       playPoint();
       burst();
       socket.emit("complete-turn", { connected: true });
@@ -1415,6 +1429,12 @@
       hideQuestion();
       playClick();
       showToast("Pass respected. No explanation required.");
+    });
+
+    socket.on("followup-revealed", () => {
+      const followUp = document.getElementById("followUpText");
+      if (state.currentQuestion) followUp.classList.remove("hidden");
+      playFlip();
     });
 
     socket.on("player-left", () => {

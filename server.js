@@ -465,6 +465,22 @@ function inRoom(socket, room) {
   return room && room.players.some((p) => p.id === socket.id);
 }
 
+// The listener (the partner who is not answering) judges the answer:
+// they mark it Answered, award a Great answer, or reveal the follow-up.
+function canJudge(socket, room) {
+  return room && room.currentQuestion && room.players.length === 2 &&
+    room.currentPlayerId !== socket.id && room.players.some((p) => p.id === socket.id);
+}
+
+// The next answerer is always the player after the current answerer,
+// regardless of who tapped the button that ended the turn.
+function nextPlayerId(room) {
+  if (room.players.length === 0) return null;
+  const index = room.players.findIndex((p) => p.id === room.currentPlayerId);
+  if (index < 0 || room.players.length < 2) return room.players[0].id;
+  return room.players[(index + 1) % room.players.length].id;
+}
+
 function playerToken(room, socketId) {
   const player = room.players.find((p) => p.id === socketId);
   return player ? player.token : null;
@@ -661,18 +677,14 @@ io.on("connection", (socket) => {
     emitState(room);
   });
 
+  // Marking a turn Answered / Great answer is the listener's call, not the answerer's.
   socket.on("complete-turn", ({ connected = false } = {}) => {
     const room = getRoomForSocket(socket);
-    if (!canAct(socket, room)) return;
+    if (!canJudge(socket, room)) return;
 
     if (connected) room.score += 1;
 
-    const currentIndex = room.players.findIndex((p) => p.id === socket.id);
-    const nextPlayer = room.players.length > 1
-      ? room.players[(currentIndex + 1) % room.players.length]
-      : room.players[0];
-
-    room.currentPlayerId = nextPlayer?.id || socket.id;
+    room.currentPlayerId = nextPlayerId(room);
     room.currentQuestion = null;
 
     io.to(room.code).emit("turn-completed", {
@@ -683,22 +695,25 @@ io.on("connection", (socket) => {
     emitState(room);
   });
 
+  // Passing stays with the answerer — "I'd rather not answer this one."
   socket.on("pass-turn", () => {
     const room = getRoomForSocket(socket);
     if (!canAct(socket, room)) return;
 
-    const currentIndex = room.players.findIndex((p) => p.id === socket.id);
-    const nextPlayer = room.players.length > 1
-      ? room.players[(currentIndex + 1) % room.players.length]
-      : room.players[0];
-
-    room.currentPlayerId = nextPlayer?.id || socket.id;
+    room.currentPlayerId = nextPlayerId(room);
     room.currentQuestion = null;
 
     io.to(room.code).emit("turn-passed", {
       currentPlayerId: room.currentPlayerId
     });
     emitState(room);
+  });
+
+  // The listener can reveal the follow-up prompt for both phones at once.
+  socket.on("reveal-followup", () => {
+    const room = getRoomForSocket(socket);
+    if (!canJudge(socket, room)) return;
+    io.to(room.code).emit("followup-revealed");
   });
 
   socket.on("disconnect", () => {
