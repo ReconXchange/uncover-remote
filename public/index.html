@@ -354,70 +354,106 @@
 
     .wheel-shell {
       position: relative;
-      width: min(82vw, 350px);
+      width: min(84vw, 366px);
       aspect-ratio: 1;
-      margin: 12px auto 18px;
-    }
-
-    .pointer {
-      position: absolute;
-      z-index: 8;
-      left: 50%;
-      top: -7px;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 17px solid transparent;
-      border-right: 17px solid transparent;
-      border-top: 31px solid var(--text);
-      filter: drop-shadow(0 4px 3px rgba(0,0,0,.25));
-    }
-
-    .wheel {
-      width: 100%;
-      height: 100%;
-      border-radius: 999px;
-      border: 8px solid #272331;
-      box-shadow: 0 0 0 2px var(--border), 0 20px 45px rgba(0,0,0,.28);
-      background: conic-gradient(
-        #a882ef 0deg 60deg,
-        #59bfae 60deg 120deg,
-        #dc915a 120deg 180deg,
-        #9a84d9 180deg 240deg,
-        #4aa896 240deg 300deg,
-        #c77f51 300deg 360deg
-      );
-      position: relative;
-      overflow: hidden;
-      transition: transform 3.5s cubic-bezier(.13,.74,.17,1);
-    }
-
-    .wheel::after {
-      content: "?";
-      position: absolute;
-      inset: 38%;
+      margin: 16px auto 22px;
       display: grid;
       place-items: center;
-      border-radius: 999px;
-      background: #24202d;
-      border: 2px solid var(--border);
-      font-size: 1.5rem;
-      font-weight: 900;
-      z-index: 4;
+      filter: drop-shadow(0 22px 40px rgba(0,0,0,.5));
     }
 
-    .wheel-label {
+    /* Soft aura behind the wheel, tinted to the active deck. */
+    .wheel-shell::before {
+      content: "";
       position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 44%;
-      transform-origin: 0 0;
-      text-align: center;
-      font-size: .75rem;
-      font-weight: 850;
-      color: #15131b;
-      z-index: 2;
+      inset: -7%;
+      border-radius: 999px;
+      background: radial-gradient(circle at 50% 50%,
+        color-mix(in srgb, var(--accent) 42%, transparent), transparent 66%);
+      filter: blur(12px);
+      z-index: 0;
+      animation: auraPulse 4.8s ease-in-out infinite;
     }
+    @keyframes auraPulse {
+      0%, 100% { opacity: .4; transform: scale(.97); }
+      50% { opacity: .72; transform: scale(1.03); }
+    }
+
+    /* The rotating disc. */
+    .wheel {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      transform-origin: 50% 50%;
+      transition: transform 3.5s cubic-bezier(.13,.74,.17,1);
+    }
+    .wheel svg,
+    .wheel-frame svg,
+    .pointer svg { width: 100%; height: 100%; display: block; }
+
+    .wheel-label {
+      font-size: 4.25px;
+      font-weight: 800;
+      fill: #17131d;
+      letter-spacing: .01px;
+      paint-order: stroke;
+      stroke: rgba(255,255,255,.42);
+      stroke-width: .55px;
+      stroke-linejoin: round;
+    }
+
+    /* Static rim, lights and gloss — sits above the disc and does not spin. */
+    .wheel-frame {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 65%, transparent));
+    }
+    .wheel-leds circle { animation: twinkle 2.8s ease-in-out infinite; }
+    .wheel-leds circle:nth-child(even) { animation-delay: 1.4s; }
+    @keyframes twinkle { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
+
+    /* Fixed centre cap. */
+    .wheel-hub {
+      position: absolute;
+      z-index: 5;
+      width: 29%;
+      aspect-ratio: 1;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 38% 30%, #322c40, #14121b 78%);
+      border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+      box-shadow:
+        0 6px 16px rgba(0,0,0,.55),
+        inset 0 1px 2px rgba(255,255,255,.16),
+        0 0 0 5px rgba(255,255,255,.03);
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 1.4rem;
+      transform: rotate(-5deg);
+    }
+    .wheel-hub span { display: block; transform: rotate(5deg); }
+
+    /* Pointer teardrop, themed to the active deck. */
+    .pointer {
+      position: absolute;
+      z-index: 9;
+      top: -6px;
+      left: 50%;
+      width: 30px;
+      height: 42px;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 5px 5px rgba(0,0,0,.45));
+    }
+    .ptr-body {
+      fill: var(--accent);
+      stroke: rgba(255,255,255,.55);
+      stroke-width: 1;
+    }
+    .ptr-gem { fill: #fff; opacity: .88; }
 
     .cards {
       display: grid;
@@ -707,14 +743,77 @@
 
         <section id="wheelPanel">
           <div class="wheel-shell">
-            <div class="pointer"></div>
-            <div id="wheel" class="wheel" aria-label="Question category wheel">
-              <span class="wheel-label" style="transform:rotate(30deg) translate(82px) rotate(-30deg)">Personality</span>
-              <span class="wheel-label" style="transform:rotate(90deg) translate(82px) rotate(-90deg)">Memories</span>
-              <span class="wheel-label" style="transform:rotate(150deg) translate(82px) rotate(-150deg)">Dreams</span>
-              <span class="wheel-label" style="transform:rotate(210deg) translate(82px) rotate(-210deg)">Opinions</span>
-              <span class="wheel-label" style="transform:rotate(270deg) translate(82px) rotate(-270deg)">Expression</span>
-              <span class="wheel-label" style="transform:rotate(330deg) translate(82px) rotate(-330deg)">Wild Card</span>
+            <div id="wheel" class="wheel" aria-label="Question category wheel" role="img">
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <g>
+                  <path d="M50 50 L26 8.43 A48 48 0 0 1 74 8.43 Z" fill="#b184f0"/>
+                  <path d="M50 50 L74 8.43 A48 48 0 0 1 98 50 Z" fill="#5ec6b4"/>
+                  <path d="M50 50 L98 50 A48 48 0 0 1 74 91.57 Z" fill="#e39a63"/>
+                  <path d="M50 50 L74 91.57 A48 48 0 0 1 26 91.57 Z" fill="#a58ae6"/>
+                  <path d="M50 50 L26 91.57 A48 48 0 0 1 2 50 Z" fill="#57bfa6"/>
+                  <path d="M50 50 L2 50 A48 48 0 0 1 26 8.43 Z" fill="#d98a5e"/>
+                </g>
+                <g stroke="rgba(255,255,255,.17)" stroke-width=".6" stroke-linecap="round">
+                  <line x1="55" y1="41.34" x2="73.5" y2="9.3"/>
+                  <line x1="60" y1="50" x2="97" y2="50"/>
+                  <line x1="55" y1="58.66" x2="73.5" y2="90.7"/>
+                  <line x1="45" y1="58.66" x2="26.5" y2="90.7"/>
+                  <line x1="40" y1="50" x2="3" y2="50"/>
+                  <line x1="45" y1="41.34" x2="26.5" y2="9.3"/>
+                </g>
+                <g>
+                  <text class="wheel-label" x="74.25" y="64" text-anchor="middle" dominant-baseline="central">Personality</text>
+                  <text class="wheel-label" x="50" y="78" text-anchor="middle" dominant-baseline="central">Memories</text>
+                  <text class="wheel-label" x="25.75" y="64" text-anchor="middle" dominant-baseline="central">Dreams</text>
+                  <text class="wheel-label" x="25.75" y="36" text-anchor="middle" dominant-baseline="central">Opinions</text>
+                  <text class="wheel-label" x="50" y="22" text-anchor="middle" dominant-baseline="central">Expression</text>
+                  <text class="wheel-label" x="74.25" y="36" text-anchor="middle" dominant-baseline="central">Wild Card</text>
+                </g>
+              </svg>
+            </div>
+
+            <div class="wheel-frame" aria-hidden="true">
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="wGloss" x1="0" y1="2" x2="0" y2="98" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#fff" stop-opacity=".22"/>
+                    <stop offset="42%" stop-color="#fff" stop-opacity="0"/>
+                    <stop offset="60%" stop-color="#000" stop-opacity="0"/>
+                    <stop offset="100%" stop-color="#000" stop-opacity=".26"/>
+                  </linearGradient>
+                  <linearGradient id="wRim" x1="0" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#615873"/>
+                    <stop offset="50%" stop-color="#28232f"/>
+                    <stop offset="100%" stop-color="#453d55"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="48" fill="url(#wGloss)"/>
+                <circle cx="50" cy="50" r="48.6" fill="none" stroke="url(#wRim)" stroke-width="2.6"/>
+                <circle cx="50" cy="50" r="46.6" fill="none" stroke="rgba(0,0,0,.3)" stroke-width=".7"/>
+                <g class="wheel-leds" fill="#fff">
+                  <circle cx="50" cy="1.5" r="1.55"/>
+                  <circle cx="74.25" cy="8.0" r="1.55"/>
+                  <circle cx="92.0" cy="25.75" r="1.55"/>
+                  <circle cx="98.5" cy="50" r="1.55"/>
+                  <circle cx="92.0" cy="74.25" r="1.55"/>
+                  <circle cx="74.25" cy="92.0" r="1.55"/>
+                  <circle cx="50" cy="98.5" r="1.55"/>
+                  <circle cx="25.75" cy="92.0" r="1.55"/>
+                  <circle cx="8.0" cy="74.25" r="1.55"/>
+                  <circle cx="1.5" cy="50" r="1.55"/>
+                  <circle cx="8.0" cy="25.75" r="1.55"/>
+                  <circle cx="25.75" cy="8.0" r="1.55"/>
+                </g>
+              </svg>
+            </div>
+
+            <div class="wheel-hub" aria-hidden="true"><span>U</span></div>
+
+            <div class="pointer" aria-hidden="true">
+              <svg viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
+                <path class="ptr-body" d="M15 40.5 C6 28 2.5 19 6 10.5 C8.5 4.5 21.5 4.5 24 10.5 C27.5 19 24 28 15 40.5 Z"/>
+                <circle class="ptr-gem" cx="15" cy="13.5" r="3.9"/>
+              </svg>
             </div>
           </div>
           <button id="spinButton" type="button" class="btn primary" style="width:100%">Spin and reveal</button>
@@ -950,6 +1049,41 @@
       document.querySelectorAll(".wheel-label").forEach((el, i) => {
         if (categories[i]) el.textContent = categories[i];
       });
+      keepLabelsUpright();
+    }
+
+    // Counter-rotate each label about its own centre so it stays horizontal and
+    // readable no matter where the disc has landed (winning label upright on top).
+    function keepLabelsUpright() {
+      const deg = -(state.wheelRotation || 0);
+      document.querySelectorAll(".wheel-label").forEach((el) => {
+        const x = el.getAttribute("x");
+        const y = el.getAttribute("y");
+        el.setAttribute("transform", "rotate(" + deg + " " + x + " " + y + ")");
+      });
+    }
+
+    // Resting angle of a label, measured clockwise from the top pointer (0°).
+    function labelAngle(el) {
+      const dx = parseFloat(el.getAttribute("x")) - 50;
+      const dy = parseFloat(el.getAttribute("y")) - 50;
+      return (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
+    }
+
+    // Total rotation that brings the given category's slice under the pointer,
+    // plus a few full turns of flourish. Falls back to a plain spin if unknown.
+    function landingRotation(category, current) {
+      let target = null;
+      document.querySelectorAll(".wheel-label").forEach((el) => {
+        if (el.textContent === category) target = labelAngle(el);
+      });
+      if (target === null) return current + 1440;
+      const desiredMod = ((-target) % 360 + 360) % 360;
+      const currentMod = ((current % 360) + 360) % 360;
+      let delta = desiredMod - currentMod;
+      if (delta < 0) delta += 360;
+      const extraTurns = 4 + Math.floor(Math.random() * 3);
+      return current + delta + 360 * extraTurns;
     }
 
     function renderPacks(room) {
@@ -1365,9 +1499,11 @@
     socket.on("wheel-spun", ({ angle, duration, question }) => {
       hideQuestion();
       state.pendingReveal = true;
-      state.wheelRotation += angle;
+      // Land the pointer exactly on the revealed category's slice.
+      state.wheelRotation = landingRotation(question.category, state.wheelRotation);
       wheel.style.transitionDuration = duration + "ms";
       wheel.style.transform = "rotate(" + state.wheelRotation + "deg)";
+      keepLabelsUpright();
       showToast(activePlayerName() + " spun the wheel…");
 
       let ticks = 0;
