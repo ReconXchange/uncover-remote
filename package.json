@@ -1,17 +1,16 @@
 {
   "name": "uncover-remote",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "A real-time two-player personal discovery game.",
+  "description": "A real-time two-player relationship reconnection game.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },
   "engines": {
-    "node": "22.22.1"
+    "node": ">=20"
   },
-  "packageManager": "yarn@4.17.1",
   "dependencies": {
     "express": "^4.21.2",
     "socket.io": "^4.8.1"

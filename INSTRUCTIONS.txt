@@ -1,10 +1,18 @@
-RENDER FIX
+DEPLOY NOTES
 
-1. Upload package.json and package-lock.json to the ROOT of the GitHub repository.
-2. Replace the existing package.json when prompted.
-3. In Render, set NODE_VERSION to 22.16.0.
-4. Set Build Command to:
-   npm ci --omit=dev --no-audit --no-fund
-5. Keep Start Command as:
-   npm start
-6. Choose Manual Deploy -> Clear build cache & deploy.
+This project deploys with npm (not yarn). If an older ".yarnrc.yml" file is still in
+your repo, delete it so Render doesn't try to use Yarn.
+
+Render setup:
+1. Push all files to the ROOT of your GitHub repository, including package.json and
+   package-lock.json.
+2. Render reads render.yaml automatically. It sets NODE_VERSION to 22.16.0 and runs:
+      Build:  npm install
+      Start:  npm start
+3. If you configure the service by hand instead, use those same two commands and set the
+   health check path to /health.
+4. For a clean redeploy: Manual Deploy -> Clear build cache & deploy.
+
+Editing the questions:
+- All decks live in server.js in the PACKS object. Each deck has six categories, and each
+  category is a list of [question, follow-up] pairs. Add or reword freely and redeploy.
