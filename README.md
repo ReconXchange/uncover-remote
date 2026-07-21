@@ -1,46 +1,62 @@
-# Uncover Remote
+# Uncover — Remote
 
-A temporary, real-time two-player personal discovery game.
+A private, real-time two-player game for reconnecting. Two phones, one shared room:
+every spin, card, question, and sound appears on both screens at once.
 
-## What it does
+Built for couples who want to see each other more clearly, laugh a little, and rebuild
+trust one honest answer at a time.
 
-- Creates a private six-character room
-- Produces a shareable invite link
-- Synchronizes wheel spins, card selections, question reveals, turns, and scores
-- Plays sounds independently on both devices
-- Unlocks deeper questions after five rounds
-- Stores room state only in server memory
+## Decks
+
+Either player can switch the deck at any time. It changes the pool the wheel and cards draw from.
+
+- **💜 Reconnect** — warm, open questions to see each other clearly again (the default).
+- **❤️ Us** — appreciation, your shared story, understanding, trust, repair, and your future.
+- **😄 Playful** — light, silly, would-you-rathers, and gentle dares to break the tension.
+- **🔥 Spicy** — flirty and intimate, just for the two of you.
+
+There is also a **Deeper** mode that unlocks after five rounds, with Reflection, Vulnerable,
+and About-Us questions. Anyone can tap **Pass** on any question — no explanation needed.
+
+## How to play
+
+1. One person taps **Create a private room** and gets an invite link.
+2. Send the link (Copy, Share, or Text it) to the other person.
+3. They open it, see who invited them, enter their name, and join.
+4. Take turns. Pick the wheel, a mystery card, or a deeper question.
+5. Tap **Great answer** to add a connection point when a moment lands.
 
 ## Run locally
 
-1. Install Node.js 18 or newer.
-2. Open a terminal in this folder.
-3. Run:
+1. Install Node.js 20 or newer.
+2. In this folder, run:
 
-```bash
-npm install
-npm start
-```
+   ```bash
+   npm install
+   npm start
+   ```
 
-4. Open `http://localhost:3000`.
+3. Open `http://localhost:3000`.
 
-To test remote play on the same Wi-Fi network, open the app from another device using the computer's local IP address, such as `http://192.168.1.25:3000`.
+To test with a second device on the same Wi-Fi, open the app from that device using the
+computer's local IP, e.g. `http://192.168.1.25:3000`.
 
-## Deploy on Render
+## Deploy on Render (free)
 
-1. Create a new GitHub repository.
-2. Upload this project's files to the repository.
-3. In Render, choose **New → Web Service**.
-4. Connect the GitHub repository.
-5. Render should detect `render.yaml`. If entering settings manually, use:
+1. Push this project to your GitHub repository.
+2. In Render, choose **New → Web Service** and connect the repo.
+3. Render detects `render.yaml`. If entering settings manually:
    - Build command: `npm install`
    - Start command: `npm start`
    - Health check path: `/health`
-6. After deployment, open the generated `onrender.com` URL.
-7. Create a room and send the invite link.
+4. Deploy, then open the generated `onrender.com` URL and create a room.
 
-## Temporary-server behavior
+The free Render service sleeps when idle, so the first visit after a while can take
+30–60 seconds to wake. Once it's awake, both phones connect instantly.
 
-Rooms live only in the Node server's memory. They are deleted ten minutes after both players disconnect, and all rooms disappear whenever the service restarts or redeploys. This is intentional for a lightweight temporary game.
+## Temporary-room behavior
 
-For durable rooms, accounts, or saved answers, connect the app to a database such as PostgreSQL, MongoDB, Firebase, or Supabase.
+Rooms live only in the server's memory. They are deleted ten minutes after both players
+disconnect, and all rooms clear whenever the service restarts or redeploys. This is
+intentional — nothing you say is stored anywhere. For durable rooms or saved answers,
+connect the app to a database such as PostgreSQL, MongoDB, or Supabase.
