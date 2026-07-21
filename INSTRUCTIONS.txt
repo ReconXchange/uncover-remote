@@ -1,0 +1,10 @@
+RENDER FIX
+
+1. Upload package.json and package-lock.json to the ROOT of the GitHub repository.
+2. Replace the existing package.json when prompted.
+3. In Render, set NODE_VERSION to 22.16.0.
+4. Set Build Command to:
+   npm ci --omit=dev --no-audit --no-fund
+5. Keep Start Command as:
+   npm start
+6. Choose Manual Deploy -> Clear build cache & deploy.
