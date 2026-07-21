@@ -222,6 +222,127 @@
       border-color: rgba(185,145,255,.55);
     }
 
+    /* ---- Deck picker ---- */
+    .deck-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .deck-head .deck-title { font-weight: 850; font-size: .95rem; }
+    .deck-blurb { color: var(--muted); font-size: .82rem; margin: 0 0 12px; min-height: 1em; }
+
+    .pack-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .pack-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 11px 6px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: var(--card);
+      cursor: pointer;
+      font-weight: 800;
+      font-size: .82rem;
+      line-height: 1;
+      transition: transform .16s ease, background .16s ease, border-color .16s ease;
+    }
+    .pack-button .pack-emoji { font-size: 1.35rem; }
+    .pack-button:hover { transform: translateY(-2px); }
+    .pack-button.active {
+      background: rgba(185,145,255,.16);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    /* ---- Invite panel ---- */
+    .invite-panel {
+      border: 1px solid rgba(185,145,255,.25);
+      background: rgba(185,145,255,.07);
+      border-radius: 16px;
+      padding: 13px;
+      margin-bottom: 14px;
+    }
+    .invite-panel h2 { font-size: .96rem; margin-bottom: 4px; }
+    .invite-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .invite-row input {
+      font-size: .9rem;
+      letter-spacing: .01em;
+      color: var(--accent-2);
+    }
+    .invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+
+    /* ---- Welcome banner on the join screen ---- */
+    .welcome-banner {
+      border: 1px solid rgba(185,145,255,.35);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(185,145,255,.20), transparent 60%),
+        rgba(185,145,255,.08);
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      text-align: center;
+    }
+    .welcome-banner .welcome-emoji { font-size: 1.9rem; display: block; margin-bottom: 6px; }
+    .welcome-banner strong { font-size: 1.12rem; }
+
+    /* ---- Per-pack accent theming ---- */
+    body[data-pack="us"] { --accent: #ff8faf; --accent-2: #ffb3c8; }
+    body[data-pack="playful"] { --accent: #ffce5c; --accent-2: #76d9c8; }
+    body[data-pack="spicy"] { --accent: #ff6b6b; --accent-2: #ff9e7d; }
+
+    /* ---- Intro "we're both here" moment ---- */
+    .intro-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(10,9,14,.72);
+      backdrop-filter: blur(8px);
+      animation: fadeIn .3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .intro-overlay.leaving { animation: fadeOut .45s ease forwards; }
+    @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+
+    .intro-card {
+      width: min(100%, 460px);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(185,145,255,.20), transparent 55%),
+        var(--panel);
+      border: 1px solid rgba(185,145,255,.35);
+      border-radius: 24px;
+      padding: 26px 22px 22px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .intro-emoji { font-size: 2.4rem; display: block; margin-bottom: 10px; }
+    .intro-card h2 { font-size: 1.3rem; margin-bottom: 10px; }
+    .intro-card p { color: var(--muted); line-height: 1.5; }
+    .intro-body { font-size: .98rem; margin-bottom: 16px; }
+    .intro-status {
+      min-height: 1.2em;
+      margin: 0 0 12px;
+      color: var(--accent-2);
+      font-weight: 700;
+      font-size: .9rem;
+    }
+    .intro-card .btn.primary { width: 100%; padding: 14px; font-size: 1.02rem; }
+    .intro-fine { font-size: .82rem; margin: 12px 0 0; }
+
     .turn-notice {
       margin-bottom: 14px;
       padding: 11px 13px;
@@ -475,6 +596,17 @@
 </head>
 <body>
   <main class="app">
+    <div id="introMoment" class="intro-overlay hidden">
+      <div class="intro-card">
+        <span class="intro-emoji">&#128156;</span>
+        <h2>You're both here.</h2>
+        <p class="intro-body">Before the first question: this isn't a test, and there are no wrong answers. You're here to understand each other a little better tonight. Take your time, be honest, and be gentle with each other. You can pass on anything &mdash; no explanation needed.</p>
+        <p id="introStatus" class="intro-status"></p>
+        <button id="readyButton" type="button" class="btn primary">I'm ready</button>
+        <p class="intro-fine muted">When you're both ready, we'll begin together.</p>
+      </div>
+    </div>
+
     <header class="brand">
       <div style="display:flex;align-items:center;gap:12px">
         <div class="brand-mark">U</div>
@@ -490,6 +622,8 @@
     </header>
 
     <section id="lobbyScreen" class="panel stack">
+      <div id="welcomeBanner" class="welcome-banner hidden"></div>
+
       <div class="hero-copy">
         <strong>Two phones. One shared game.</strong>
         <p class="muted">Create a private room, send the link, and every spin, card, sound, and question appears on both screens.</p>
@@ -520,13 +654,26 @@
       <div class="panel">
         <div class="room-bar">
           <div>
-            <div class="small muted">Private room</div>
+            <div class="small muted">Private room code</div>
             <div class="room-code"><span class="status-dot"></span><span id="roomCodeText">------</span></div>
           </div>
-          <button id="shareButton" type="button" class="btn secondary">Share invite link</button>
+          <div class="small muted" style="text-align:right">Rooms vanish 10 min<br>after you both leave</div>
         </div>
 
         <div id="players" class="players"></div>
+
+        <div id="invitePanel" class="invite-panel">
+          <h2>Invite your partner</h2>
+          <p class="muted small" style="margin:0">Send this link. When they open it, they'll join this exact room.</p>
+          <div class="invite-row">
+            <input id="inviteLink" type="text" readonly aria-label="Invite link">
+            <button id="copyLinkButton" type="button" class="btn secondary">Copy</button>
+          </div>
+          <div class="invite-actions">
+            <button id="shareButton" type="button" class="btn primary">Share link…</button>
+            <button id="smsButton" type="button" class="btn ghost">Text it</button>
+          </div>
+        </div>
 
         <div class="metrics">
           <div class="metric">
@@ -544,6 +691,13 @@
         </div>
 
         <div id="turnNotice" class="turn-notice">Waiting for the second player…</div>
+
+        <div class="deck-head">
+          <span class="deck-title">Deck</span>
+          <span class="small muted">Either of you can switch it</span>
+        </div>
+        <div id="packTabs" class="pack-tabs"></div>
+        <p id="deckBlurb" class="deck-blurb"></p>
 
         <div class="mode-tabs">
           <button type="button" class="btn mode-button active" data-mode="wheel">Wheel</button>
@@ -658,6 +812,30 @@
       state.rejoinName = storedName;
     }
 
+    async function showWelcome(code) {
+      const banner = document.getElementById("welcomeBanner");
+      if (!banner) return;
+      try {
+        const res = await fetch("/api/room/" + encodeURIComponent(code));
+        const data = await res.json();
+        if (!data.exists) { banner.classList.add("hidden"); return; }
+        const host = data.hostName || "Your partner";
+        banner.innerHTML =
+          '<span class="welcome-emoji">\uD83D\uDC9C</span>' +
+          "<strong></strong>" +
+          '<div class="muted small" style="margin-top:5px"></div>';
+        banner.querySelector("strong").textContent = host + " invited you to play";
+        banner.querySelector(".muted").textContent = data.full
+          ? "This room already has two players right now."
+          : "Add your name below and tap Join to connect.";
+        banner.classList.remove("hidden");
+      } catch (error) {
+        banner.classList.add("hidden");
+      }
+    }
+
+    if (queryRoom) showWelcome(queryRoom.toUpperCase());
+
     let audioContext = null;
     function ensureAudio() {
       if (!state.soundsEnabled) return null;
@@ -740,12 +918,20 @@
       lobbyScreen.classList.add("hidden");
       gameScreen.classList.remove("hidden");
       document.getElementById("roomCodeText").textContent = result.roomCode;
+      updateInviteLink(result.roomCode);
       ensureAudio();
       if (!options.silent) playReveal();
     }
 
     function isMyTurn() {
       return state.room && state.room.currentPlayerId === state.myId;
+    }
+
+    // I'm the listener when there are two players and it isn't my turn to answer.
+    function amListener() {
+      return Boolean(state.room && state.room.players.length === 2 &&
+        state.room.currentPlayerId && !isMyTurn() &&
+        state.room.players.some((player) => player.id === state.myId));
     }
 
     function otherPlayerName() {
@@ -759,9 +945,88 @@
       return state.room.players.find((player) => player.id === state.room.currentPlayerId)?.name || "";
     }
 
+    function renderWheelLabels(categories) {
+      if (!Array.isArray(categories)) return;
+      document.querySelectorAll(".wheel-label").forEach((el, i) => {
+        if (categories[i]) el.textContent = categories[i];
+      });
+    }
+
+    function renderPacks(room) {
+      const wrap = document.getElementById("packTabs");
+      if (!wrap) return;
+      const packs = room.packs || [];
+      if (wrap.dataset.built !== String(packs.length)) {
+        wrap.innerHTML = "";
+        packs.forEach((p) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "pack-button";
+          button.dataset.pack = p.id;
+          button.innerHTML = '<span class="pack-emoji"></span><span class="pack-name"></span>';
+          button.querySelector(".pack-emoji").textContent = p.emoji;
+          button.querySelector(".pack-name").textContent = p.label;
+          button.addEventListener("click", () => {
+            if (button.classList.contains("active")) return;
+            playClick();
+            socket.emit("set-pack", { pack: p.id });
+          });
+          wrap.appendChild(button);
+        });
+        wrap.dataset.built = String(packs.length);
+      }
+      wrap.querySelectorAll(".pack-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.pack === room.pack);
+      });
+      const meta = packs.find((p) => p.id === room.pack);
+      document.getElementById("deckBlurb").textContent = meta ? meta.blurb : "";
+      document.body.setAttribute("data-pack", room.pack || "reconnect");
+    }
+
+    function maybeRenderIntro(room) {
+      const overlay = document.getElementById("introMoment");
+      if (!overlay) return;
+      const show = room.players.length === 2 && room.round === 0 && !room.bothReady;
+      if (!show) {
+        overlay.classList.add("hidden");
+        overlay.classList.remove("leaving");
+        return;
+      }
+      overlay.classList.remove("hidden");
+      const ready = room.readyIds || [];
+      const iAmReady = ready.includes(state.myId);
+      const partner = room.players.find((p) => p.id !== state.myId);
+      const partnerReady = partner && ready.includes(partner.id);
+      const partnerName = partner ? partner.name : "your partner";
+
+      const button = document.getElementById("readyButton");
+      button.disabled = iAmReady;
+      button.textContent = iAmReady ? "You're ready \u2713" : "I'm ready";
+
+      const status = document.getElementById("introStatus");
+      if (iAmReady && !partnerReady) status.textContent = "Waiting for " + partnerName + "\u2026";
+      else if (!iAmReady && partnerReady) status.textContent = partnerName + " is ready when you are.";
+      else status.textContent = "";
+    }
+
+    function inviteUrl(code) {
+      return location.origin + "/?room=" + code;
+    }
+
+    function updateInviteLink(code) {
+      const el = document.getElementById("inviteLink");
+      if (el && code) el.value = inviteUrl(code);
+    }
+
     function renderState(room) {
       state.room = room;
       document.getElementById("roomCodeText").textContent = room.code;
+      renderWheelLabels(room.categories);
+      renderPacks(room);
+      updateInviteLink(room.code);
+      const invitePanel = document.getElementById("invitePanel");
+      if (invitePanel) invitePanel.classList.toggle("hidden", room.players.length >= 2);
+      maybeRenderIntro(room);
       document.getElementById("roundValue").textContent = room.round;
       document.getElementById("scoreValue").textContent = room.score;
       document.getElementById("deepValue").textContent = room.deeperUnlocked ? "Unlocked" : "Locked";
@@ -823,9 +1088,14 @@
         button.disabled = !canChoose || !room.deeperUnlocked;
       });
 
-      document.querySelectorAll("#questionActions button").forEach((button) => {
-        button.disabled = !isMyTurn() || !state.currentQuestion;
-      });
+      // The answerer keeps Pass; the listener judges the answer (follow-up,
+      // answered, great answer) so no one grades their own response.
+      const hasQuestion = Boolean(state.currentQuestion);
+      const listening = amListener();
+      document.getElementById("passButton").disabled = !hasQuestion || !isMyTurn();
+      document.getElementById("followUpButton").disabled = !hasQuestion || !listening;
+      document.getElementById("answeredButton").disabled = !hasQuestion || !listening;
+      document.getElementById("connectedButton").disabled = !hasQuestion || !listening;
 
       if (room.currentQuestion && !state.currentQuestion && !state.pendingReveal) {
         revealQuestion(room.currentQuestion);
@@ -856,8 +1126,12 @@
       document.getElementById("questionCategory").textContent = question.category;
       document.getElementById("questionText").textContent = question.question;
       document.getElementById("followUpText").textContent = question.followUp;
-      document.getElementById("followUpText").classList.add("hidden");
-      document.getElementById("answeringPlayer").textContent = activePlayerName() + " answers";
+      // Honor a follow-up that was already revealed (e.g. after a reconnect).
+      document.getElementById("followUpText").classList.toggle(
+        "hidden", !(state.room && state.room.followUpRevealed));
+      document.getElementById("answeringPlayer").textContent = isMyTurn()
+        ? "You answer — they'll respond"
+        : activePlayerName() + " answers — your call";
 
       questionCard.classList.remove("hiding");
       void questionCard.offsetWidth;
@@ -918,11 +1192,17 @@
       if (event.key === "Enter") document.getElementById("joinRoomButton").click();
     });
 
+    function inviteMessage() {
+      const me = state.rejoinName || getName() || "I";
+      const url = inviteUrl(state.room.code);
+      return "Hey \u2014 I made us a little game to reconnect. Tap to join me: " + url;
+    }
+
     document.getElementById("shareButton").addEventListener("click", async () => {
-      const url = location.origin + "/?room=" + state.room.code;
+      const url = inviteUrl(state.room.code);
       const shareData = {
-        title: "Join my Uncover game",
-        text: "Join my private Uncover room: " + state.room.code,
+        title: "Join me for a game",
+        text: inviteMessage(),
         url
       };
 
@@ -936,6 +1216,31 @@
       } catch (error) {
         if (error.name !== "AbortError") showToast("Room link: " + url);
       }
+    });
+
+    document.getElementById("copyLinkButton").addEventListener("click", async () => {
+      const el = document.getElementById("inviteLink");
+      playClick();
+      try {
+        await navigator.clipboard.writeText(el.value);
+        showToast("Invite link copied \u2014 paste it to her.");
+      } catch (error) {
+        el.focus();
+        el.select();
+        showToast("Selected the link \u2014 press copy on your keyboard.");
+      }
+    });
+
+    document.getElementById("readyButton").addEventListener("click", () => {
+      ensureAudio();
+      playClick();
+      document.getElementById("readyButton").disabled = true;
+      socket.emit("set-ready");
+    });
+
+    document.getElementById("smsButton").addEventListener("click", () => {
+      playClick();
+      window.location.href = "sms:?&body=" + encodeURIComponent(inviteMessage());
     });
 
     document.querySelectorAll(".mode-button").forEach((button) => {
@@ -978,19 +1283,19 @@
     });
 
     document.getElementById("followUpButton").addEventListener("click", () => {
+      if (!amListener() || !state.currentQuestion) return;
       playClick();
-      if (!state.currentQuestion) return;
-      document.getElementById("followUpText").classList.remove("hidden");
+      socket.emit("reveal-followup");
     });
 
     document.getElementById("answeredButton").addEventListener("click", () => {
-      if (!isMyTurn() || !state.currentQuestion) return;
+      if (!amListener() || !state.currentQuestion) return;
       playClick();
       socket.emit("complete-turn", { connected: false });
     });
 
     document.getElementById("connectedButton").addEventListener("click", () => {
-      if (!isMyTurn() || !state.currentQuestion) return;
+      if (!amListener() || !state.currentQuestion) return;
       playPoint();
       burst();
       socket.emit("complete-turn", { connected: true });
@@ -1035,9 +1340,26 @@
       renderState(room);
     });
 
+    socket.on("both-ready", () => {
+      const overlay = document.getElementById("introMoment");
+      if (overlay) {
+        overlay.classList.add("leaving");
+        setTimeout(() => overlay.classList.add("hidden"), 460);
+      }
+      playReveal();
+      burst();
+      showToast("You're both here. Let's begin \uD83D\uDC9C");
+    });
+
     socket.on("mode-changed", ({ mode }) => {
       setModePanels(mode);
       playClick();
+    });
+
+    socket.on("pack-changed", ({ label, emoji, by }) => {
+      playFlip();
+      const who = by || "Someone";
+      showToast(who + " switched to the " + (emoji || "") + " " + label + " deck.");
     });
 
     socket.on("wheel-spun", ({ angle, duration, question }) => {
@@ -1109,6 +1431,12 @@
       hideQuestion();
       playClick();
       showToast("Pass respected. No explanation required.");
+    });
+
+    socket.on("followup-revealed", () => {
+      const followUp = document.getElementById("followUpText");
+      if (state.currentQuestion) followUp.classList.remove("hidden");
+      playFlip();
     });
 
     socket.on("player-left", () => {
