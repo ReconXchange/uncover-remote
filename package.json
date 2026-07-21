@@ -1,0 +1,18 @@
+{
+  "name": "uncover-remote",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A real-time two-player personal discovery game.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}

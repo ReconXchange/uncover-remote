@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#15131b">
+  <title>Uncover — Remote Personal Discovery Game</title>
+  <style>
+    :root {
+      --bg: #111017;
+      --panel: #1a1822;
+      --card: #211e2b;
+      --text: #f8f5ff;
+      --muted: #aaa4b7;
+      --border: rgba(255,255,255,.11);
+      --accent: #b991ff;
+      --accent-2: #76d9c8;
+      --accent-3: #ffb477;
+      --danger: #ff8181;
+      --shadow: 0 18px 55px rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(185,145,255,.14), transparent 34%),
+        radial-gradient(circle at 100% 30%, rgba(118,217,200,.10), transparent 34%),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(185,145,255,.45);
+      outline-offset: 2px;
+    }
+
+    .app {
+      width: min(100%, 820px);
+      margin: 0 auto;
+      padding: max(18px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand-mark {
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--accent);
+      color: #18121f;
+      font-weight: 900;
+      transform: rotate(-4deg);
+    }
+
+    h1, h2, p { margin-top: 0; }
+    h1 { margin-bottom: 4px; font-size: clamp(1.45rem, 4vw, 2rem); }
+    h2 { font-size: 1.05rem; margin-bottom: 6px; }
+    .muted { color: var(--muted); }
+    .small { font-size: .88rem; }
+
+    .panel {
+      background: rgba(26,24,34,.88);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .stack { display: grid; gap: 14px; }
+    .grid-2 { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grid-3 { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field span {
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #121119;
+      color: var(--text);
+      padding: 13px 14px;
+      font-size: 16px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--card);
+      padding: 12px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .16s ease, opacity .16s ease, background .16s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(1px) scale(.99); }
+    .btn:disabled { cursor: not-allowed; opacity: .42; transform: none; }
+    .btn.primary { background: var(--accent); color: #18121f; border-color: transparent; }
+    .btn.secondary { background: rgba(118,217,200,.13); }
+    .btn.ghost { background: transparent; }
+    .btn.danger { color: var(--danger); }
+
+    .hero-copy {
+      text-align: center;
+      padding: 12px 4px 4px;
+    }
+
+    .hero-copy strong {
+      display: block;
+      font-size: clamp(1.6rem, 6vw, 2.5rem);
+      letter-spacing: -.035em;
+      margin-bottom: 8px;
+    }
+
+    .join-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 9px;
+    }
+
+    .hidden { display: none !important; }
+
+    .room-bar {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .room-code {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      color: var(--accent-2);
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      box-shadow: 0 0 0 6px rgba(118,217,200,.10);
+    }
+
+    .players {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .player {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.025);
+      border-radius: 16px;
+      padding: 12px;
+      min-height: 68px;
+    }
+
+    .player.current {
+      border-color: var(--accent);
+      background: rgba(185,145,255,.10);
+    }
+
+    .player-name { font-weight: 800; }
+    .turn-label { margin-top: 4px; color: var(--muted); font-size: .8rem; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.025);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .metric-label { color: var(--muted); font-size: .77rem; }
+    .metric-value { margin-top: 3px; font-size: 1.1rem; font-weight: 850; }
+
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .mode-tabs .btn.active {
+      background: rgba(185,145,255,.16);
+      border-color: rgba(185,145,255,.55);
+    }
+
+    .turn-notice {
+      margin-bottom: 14px;
+      padding: 11px 13px;
+      border-radius: 14px;
+      background: rgba(118,217,200,.08);
+      border: 1px solid rgba(118,217,200,.18);
+      font-size: .9rem;
+    }
+
+    .wheel-shell {
+      position: relative;
+      width: min(82vw, 350px);
+      aspect-ratio: 1;
+      margin: 12px auto 18px;
+    }
+
+    .pointer {
+      position: absolute;
+      z-index: 8;
+      left: 50%;
+      top: -7px;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 17px solid transparent;
+      border-right: 17px solid transparent;
+      border-top: 31px solid var(--text);
+      filter: drop-shadow(0 4px 3px rgba(0,0,0,.25));
+    }
+
+    .wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 999px;
+      border: 8px solid #272331;
+      box-shadow: 0 0 0 2px var(--border), 0 20px 45px rgba(0,0,0,.28);
+      background: conic-gradient(
+        #a882ef 0deg 60deg,
+        #59bfae 60deg 120deg,
+        #dc915a 120deg 180deg,
+        #9a84d9 180deg 240deg,
+        #4aa896 240deg 300deg,
+        #c77f51 300deg 360deg
+      );
+      position: relative;
+      overflow: hidden;
+      transition: transform 3.5s cubic-bezier(.13,.74,.17,1);
+    }
+
+    .wheel::after {
+      content: "?";
+      position: absolute;
+      inset: 38%;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #24202d;
+      border: 2px solid var(--border);
+      font-size: 1.5rem;
+      font-weight: 900;
+      z-index: 4;
+    }
+
+    .wheel-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 44%;
+      transform-origin: 0 0;
+      text-align: center;
+      font-size: .75rem;
+      font-weight: 850;
+      color: #15131b;
+      z-index: 2;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 11px;
+      perspective: 900px;
+      margin: 12px 0 16px;
+    }
+
+    .mystery-card {
+      min-height: 132px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(185,145,255,.19), transparent 35%),
+        var(--card);
+      cursor: pointer;
+      position: relative;
+      font-weight: 850;
+      transition: transform .35s ease, opacity .2s ease;
+    }
+
+    .mystery-card:hover { transform: translateY(-4px) rotate(-1deg); }
+    .mystery-card.used { opacity: .28; cursor: default; transform: none; }
+    .mystery-card span {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #18121f;
+      font-size: 1.12rem;
+    }
+
+    .deep-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      margin-top: 12px;
+    }
+
+    .lock-note {
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .question-wrap {
+      margin-top: 14px;
+      perspective: 1000px;
+      min-height: 250px;
+    }
+
+    .question-card {
+      min-height: 244px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(118,217,200,.11), transparent 34%),
+        var(--card);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transform: rotateY(90deg) scale(.96);
+      opacity: 0;
+      transition: transform .58s ease, opacity .32s ease;
+    }
+
+    .question-card.revealed {
+      transform: rotateY(0deg) scale(1);
+      opacity: 1;
+    }
+
+    .question-card.hiding {
+      transform: rotateY(-90deg) scale(.96);
+      opacity: 0;
+    }
+
+    .question-category {
+      display: inline-flex;
+      width: fit-content;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(185,145,255,.14);
+      color: #ddcaff;
+      font-size: .77rem;
+      font-weight: 850;
+    }
+
+    .question {
+      margin: 18px 0 8px;
+      font-size: clamp(1.22rem, 4vw, 1.58rem);
+      line-height: 1.28;
+      font-weight: 850;
+      letter-spacing: -.015em;
+    }
+
+    .follow-up {
+      color: var(--muted);
+      font-size: .92rem;
+      padding-top: 11px;
+      border-top: 1px solid var(--border);
+    }
+
+    .question-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translate(-50%, 18px);
+      width: min(calc(100% - 32px), 520px);
+      padding: 12px 14px;
+      background: #2a2634;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+      z-index: 50;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .spark {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      z-index: 40;
+      pointer-events: none;
+      animation: fall 1.2s ease-out forwards;
+    }
+
+    @keyframes fall {
+      from { transform: translateY(-12px) rotate(0); opacity: 1; }
+      to { transform: translateY(180px) rotate(600deg); opacity: 0; }
+    }
+
+    .connection-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    @media (max-width: 620px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .question-actions { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .room-bar { grid-template-columns: 1fr; }
+      .room-bar .btn { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="brand">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="brand-mark">U</div>
+        <div>
+          <h1>Uncover</h1>
+          <div class="muted small">Remote personal discovery game</div>
+        </div>
+      </div>
+      <div id="connectionStatus" class="connection-status">
+        <span class="status-dot"></span>
+        <span>Connecting</span>
+      </div>
+    </header>
+
+    <section id="lobbyScreen" class="panel stack">
+      <div class="hero-copy">
+        <strong>Two phones. One shared game.</strong>
+        <p class="muted">Create a private room, send the link, and every spin, card, sound, and question appears on both screens.</p>
+      </div>
+
+      <label class="field">
+        <span>Your name</span>
+        <input id="nameInput" maxlength="24" autocomplete="nickname" placeholder="Enter your name">
+      </label>
+
+      <button id="createRoomButton" type="button" class="btn primary">Create a private room</button>
+
+      <div style="display:flex;align-items:center;gap:10px;color:var(--muted)">
+        <div style="height:1px;background:var(--border);flex:1"></div>
+        <span class="small">or join with a code</span>
+        <div style="height:1px;background:var(--border);flex:1"></div>
+      </div>
+
+      <div class="join-row">
+        <input id="roomCodeInput" maxlength="6" inputmode="text" autocapitalize="characters" placeholder="ROOM CODE">
+        <button id="joinRoomButton" type="button" class="btn secondary">Join</button>
+      </div>
+
+      <p id="lobbyError" class="small" style="color:var(--danger);margin:0"></p>
+    </section>
+
+    <section id="gameScreen" class="hidden">
+      <div class="panel">
+        <div class="room-bar">
+          <div>
+            <div class="small muted">Private room</div>
+            <div class="room-code"><span class="status-dot"></span><span id="roomCodeText">------</span></div>
+          </div>
+          <button id="shareButton" type="button" class="btn secondary">Share invite link</button>
+        </div>
+
+        <div id="players" class="players"></div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label">Round</div>
+            <div id="roundValue" class="metric-value">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Connection points</div>
+            <div id="scoreValue" class="metric-value">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Deeper level</div>
+            <div id="deepValue" class="metric-value">Locked</div>
+          </div>
+        </div>
+
+        <div id="turnNotice" class="turn-notice">Waiting for the second player…</div>
+
+        <div class="mode-tabs">
+          <button type="button" class="btn mode-button active" data-mode="wheel">Wheel</button>
+          <button type="button" class="btn mode-button" data-mode="cards">Cards</button>
+          <button type="button" class="btn mode-button" data-mode="deep">Deeper</button>
+        </div>
+
+        <section id="wheelPanel">
+          <div class="wheel-shell">
+            <div class="pointer"></div>
+            <div id="wheel" class="wheel" aria-label="Question category wheel">
+              <span class="wheel-label" style="transform:rotate(30deg) translate(82px) rotate(-30deg)">Personality</span>
+              <span class="wheel-label" style="transform:rotate(90deg) translate(82px) rotate(-90deg)">Memories</span>
+              <span class="wheel-label" style="transform:rotate(150deg) translate(82px) rotate(-150deg)">Dreams</span>
+              <span class="wheel-label" style="transform:rotate(210deg) translate(82px) rotate(-210deg)">Opinions</span>
+              <span class="wheel-label" style="transform:rotate(270deg) translate(82px) rotate(-270deg)">Expression</span>
+              <span class="wheel-label" style="transform:rotate(330deg) translate(82px) rotate(-330deg)">Wild Card</span>
+            </div>
+          </div>
+          <button id="spinButton" type="button" class="btn primary" style="width:100%">Spin and reveal</button>
+        </section>
+
+        <section id="cardsPanel" class="hidden">
+          <h2>Choose a mystery card</h2>
+          <p class="muted small">The question remains hidden on both phones until the card flips.</p>
+          <div id="cards" class="cards">
+            <button type="button" class="mystery-card" data-card-index="0"><span>?</span>Mystery</button>
+            <button type="button" class="mystery-card" data-card-index="1"><span>★</span>Spotlight</button>
+            <button type="button" class="mystery-card" data-card-index="2"><span>↗</span>Dream</button>
+            <button type="button" class="mystery-card" data-card-index="3"><span>◌</span>Memory</button>
+            <button type="button" class="mystery-card" data-card-index="4"><span>!</span>Bold</button>
+            <button type="button" class="mystery-card" data-card-index="5"><span>∞</span>Wildcard</button>
+          </div>
+          <button id="shuffleButton" type="button" class="btn ghost" style="width:100%">Shuffle all cards</button>
+        </section>
+
+        <section id="deepPanel" class="hidden">
+          <div id="deepLocked" class="lock-note">
+            Complete five regular rounds together to unlock deeper questions.
+          </div>
+          <div id="deepUnlocked" class="hidden">
+            <h2>Choose how deep to go</h2>
+            <p class="muted small">These begin with self-reflection and gradually move toward connection.</p>
+            <div class="deep-grid">
+              <button type="button" class="btn deep-button" data-level="Reflection">Reflection</button>
+              <button type="button" class="btn deep-button" data-level="Vulnerable">Vulnerable</button>
+              <button type="button" class="btn deep-button" data-level="About Us">About Us</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="question-wrap">
+          <article id="questionCard" class="question-card">
+            <div>
+              <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <span id="questionCategory" class="question-category">Ready</span>
+                <span id="answeringPlayer" class="muted small">Waiting for a selection</span>
+              </div>
+              <div id="questionText" class="question">The selected question will reveal here on both screens.</div>
+              <div id="followUpText" class="follow-up hidden"></div>
+            </div>
+
+            <div id="questionActions" class="question-actions">
+              <button id="followUpButton" type="button" class="btn ghost">Follow-up</button>
+              <button id="answeredButton" type="button" class="btn">Answered</button>
+              <button id="connectedButton" type="button" class="btn secondary">Great answer</button>
+              <button id="passButton" type="button" class="btn danger">Pass</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const state = {
+      room: null,
+      myId: null,
+      wheelRotation: 0,
+      currentQuestion: null,
+      pendingReveal: false,
+      revealTimer: null,
+      soundsEnabled: true,
+      rejoinCode: null,
+      rejoinName: null
+    };
+
+    const lobbyScreen = document.getElementById("lobbyScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const nameInput = document.getElementById("nameInput");
+    const roomCodeInput = document.getElementById("roomCodeInput");
+    const lobbyError = document.getElementById("lobbyError");
+    const wheel = document.getElementById("wheel");
+    const questionCard = document.getElementById("questionCard");
+    const toast = document.getElementById("toast");
+
+    const queryRoom = new URLSearchParams(location.search).get("room");
+    const storedRoom = sessionStorage.getItem("uncoverRoom");
+    const storedName = sessionStorage.getItem("uncoverName");
+    const clientToken = sessionStorage.getItem("uncoverToken") ||
+      (window.crypto?.randomUUID ? window.crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now());
+    sessionStorage.setItem("uncoverToken", clientToken);
+
+    if (storedName) nameInput.value = storedName;
+    if (queryRoom) roomCodeInput.value = queryRoom.toUpperCase();
+    if (queryRoom && storedRoom === queryRoom.toUpperCase() && storedName) {
+      state.rejoinCode = queryRoom.toUpperCase();
+      state.rejoinName = storedName;
+    }
+
+    let audioContext = null;
+    function ensureAudio() {
+      if (!state.soundsEnabled) return null;
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return null;
+      if (!audioContext) audioContext = new AudioCtor();
+      if (audioContext.state === "suspended") audioContext.resume();
+      return audioContext;
+    }
+
+    function tone(frequency, duration, type = "sine", volume = .04, delay = 0) {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const start = ctx.currentTime + delay;
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + .015);
+      gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + duration + .04);
+    }
+
+    function playClick() {
+      tone(320, .08, "square", .02);
+    }
+
+    function playFlip() {
+      tone(250, .08, "triangle", .03);
+      tone(520, .13, "triangle", .035, .07);
+    }
+
+    function playReveal() {
+      tone(392, .12, "sine", .035);
+      tone(523, .15, "sine", .04, .10);
+      tone(659, .20, "sine", .04, .21);
+    }
+
+    function playPoint() {
+      tone(523, .10, "triangle", .04);
+      tone(659, .12, "triangle", .04, .08);
+      tone(784, .18, "triangle", .04, .17);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2400);
+    }
+
+    function setConnection(text, online) {
+      const el = document.getElementById("connectionStatus");
+      el.querySelector("span:last-child").textContent = text;
+      el.querySelector(".status-dot").style.background = online ? "var(--accent-2)" : "var(--danger)";
+    }
+
+    function getName() {
+      return nameInput.value.trim().slice(0, 24);
+    }
+
+    function requireName() {
+      if (getName()) return true;
+      lobbyError.textContent = "Enter your name first.";
+      nameInput.focus();
+      return false;
+    }
+
+    function enterGame(result, options = {}) {
+      state.myId = result.playerId;
+      state.rejoinCode = result.roomCode;
+      state.rejoinName = getName() || state.rejoinName || "Player";
+      sessionStorage.setItem("uncoverRoom", result.roomCode);
+      sessionStorage.setItem("uncoverName", state.rejoinName);
+      history.replaceState({}, "", "/?room=" + result.roomCode);
+      lobbyScreen.classList.add("hidden");
+      gameScreen.classList.remove("hidden");
+      document.getElementById("roomCodeText").textContent = result.roomCode;
+      ensureAudio();
+      if (!options.silent) playReveal();
+    }
+
+    function isMyTurn() {
+      return state.room && state.room.currentPlayerId === state.myId;
+    }
+
+    function otherPlayerName() {
+      if (!state.room) return "the other player";
+      const other = state.room.players.find((player) => player.id !== state.myId);
+      return other ? other.name : "the other player";
+    }
+
+    function activePlayerName() {
+      if (!state.room) return "";
+      return state.room.players.find((player) => player.id === state.room.currentPlayerId)?.name || "";
+    }
+
+    function renderState(room) {
+      state.room = room;
+      document.getElementById("roomCodeText").textContent = room.code;
+      document.getElementById("roundValue").textContent = room.round;
+      document.getElementById("scoreValue").textContent = room.score;
+      document.getElementById("deepValue").textContent = room.deeperUnlocked ? "Unlocked" : "Locked";
+
+      const players = document.getElementById("players");
+      players.innerHTML = "";
+      room.players.forEach((player) => {
+        const el = document.createElement("div");
+        el.className = "player" + (player.id === room.currentPlayerId ? " current" : "");
+        const you = player.id === state.myId ? " · You" : "";
+        el.innerHTML =
+          '<div class="player-name"></div>' +
+          '<div class="turn-label"></div>';
+        el.querySelector(".player-name").textContent = player.name + you;
+        el.querySelector(".turn-label").textContent =
+          player.id === room.currentPlayerId ? "Current turn" : "Listening";
+        players.appendChild(el);
+      });
+
+      if (room.players.length < 2) {
+        const waiting = document.createElement("div");
+        waiting.className = "player";
+        waiting.innerHTML = '<div class="player-name muted">Waiting…</div><div class="turn-label">Send the invite link</div>';
+        players.appendChild(waiting);
+      }
+
+      const notice = document.getElementById("turnNotice");
+      if (room.players.length < 2) {
+        notice.textContent = "Waiting for the second player. Share the invite link above.";
+      } else if (isMyTurn()) {
+        notice.textContent = "Your turn — choose the wheel, a card, or a deeper question.";
+      } else {
+        notice.textContent = activePlayerName() + " is choosing. Your screen will update automatically.";
+      }
+
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === room.mode);
+        button.disabled = !isMyTurn() || room.players.length < 2 ||
+          (button.dataset.mode === "deep" && !room.deeperUnlocked);
+      });
+
+      setModePanels(room.mode);
+
+      document.getElementById("deepLocked").classList.toggle("hidden", room.deeperUnlocked);
+      document.getElementById("deepUnlocked").classList.toggle("hidden", !room.deeperUnlocked);
+
+      const canChoose = isMyTurn() && room.players.length === 2 && !room.currentQuestion;
+      document.getElementById("spinButton").disabled = !canChoose;
+      document.getElementById("shuffleButton").disabled = !isMyTurn();
+
+      document.querySelectorAll(".mystery-card").forEach((card) => {
+        const index = Number(card.dataset.cardIndex);
+        const used = room.usedCards.includes(index);
+        card.classList.toggle("used", used);
+        card.disabled = !canChoose || used;
+      });
+
+      document.querySelectorAll(".deep-button").forEach((button) => {
+        button.disabled = !canChoose || !room.deeperUnlocked;
+      });
+
+      document.querySelectorAll("#questionActions button").forEach((button) => {
+        button.disabled = !isMyTurn() || !state.currentQuestion;
+      });
+
+      if (room.currentQuestion && !state.currentQuestion && !state.pendingReveal) {
+        revealQuestion(room.currentQuestion);
+      }
+    }
+
+    function setModePanels(mode) {
+      document.getElementById("wheelPanel").classList.toggle("hidden", mode !== "wheel");
+      document.getElementById("cardsPanel").classList.toggle("hidden", mode !== "cards");
+      document.getElementById("deepPanel").classList.toggle("hidden", mode !== "deep");
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+    }
+
+    function hideQuestion() {
+      clearTimeout(state.revealTimer);
+      state.pendingReveal = false;
+      questionCard.classList.remove("revealed");
+      questionCard.classList.add("hiding");
+      document.getElementById("followUpText").classList.add("hidden");
+      state.currentQuestion = null;
+    }
+
+    function revealQuestion(question) {
+      state.pendingReveal = false;
+      state.currentQuestion = question;
+      document.getElementById("questionCategory").textContent = question.category;
+      document.getElementById("questionText").textContent = question.question;
+      document.getElementById("followUpText").textContent = question.followUp;
+      document.getElementById("followUpText").classList.add("hidden");
+      document.getElementById("answeringPlayer").textContent = activePlayerName() + " answers";
+
+      questionCard.classList.remove("hiding");
+      void questionCard.offsetWidth;
+      questionCard.classList.add("revealed");
+      playReveal();
+    }
+
+    function burst() {
+      const colors = ["var(--accent)", "var(--accent-2)", "var(--accent-3)"];
+      for (let i = 0; i < 22; i++) {
+        const spark = document.createElement("span");
+        spark.className = "spark";
+        spark.style.left = (8 + Math.random() * 84) + "vw";
+        spark.style.top = "8vh";
+        spark.style.background = colors[i % colors.length];
+        spark.style.animationDelay = (Math.random() * .24) + "s";
+        document.body.appendChild(spark);
+        setTimeout(() => spark.remove(), 1500);
+      }
+    }
+
+    document.getElementById("createRoomButton").addEventListener("click", () => {
+      if (!requireName()) return;
+      playClick();
+      lobbyError.textContent = "";
+      socket.emit("create-room", { name: getName(), playerToken: clientToken }, (result) => {
+        if (!result.ok) {
+          lobbyError.textContent = result.error || "Could not create the room.";
+          return;
+        }
+        enterGame(result);
+      });
+    });
+
+    document.getElementById("joinRoomButton").addEventListener("click", () => {
+      if (!requireName()) return;
+      const roomCode = roomCodeInput.value.trim().toUpperCase();
+      if (roomCode.length !== 6) {
+        lobbyError.textContent = "Enter the six-character room code.";
+        return;
+      }
+      playClick();
+      lobbyError.textContent = "";
+      socket.emit("join-room", { roomCode, name: getName(), playerToken: clientToken }, (result) => {
+        if (!result.ok) {
+          lobbyError.textContent = result.error || "Could not join the room.";
+          return;
+        }
+        enterGame(result);
+      });
+    });
+
+    roomCodeInput.addEventListener("input", () => {
+      roomCodeInput.value = roomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    });
+
+    roomCodeInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") document.getElementById("joinRoomButton").click();
+    });
+
+    document.getElementById("shareButton").addEventListener("click", async () => {
+      const url = location.origin + "/?room=" + state.room.code;
+      const shareData = {
+        title: "Join my Uncover game",
+        text: "Join my private Uncover room: " + state.room.code,
+        url
+      };
+
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          await navigator.clipboard.writeText(url);
+          showToast("Invite link copied.");
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") showToast("Room link: " + url);
+      }
+    });
+
+    document.querySelectorAll(".mode-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!isMyTurn()) return;
+        playClick();
+        socket.emit("set-mode", { mode: button.dataset.mode });
+      });
+    });
+
+    document.getElementById("spinButton").addEventListener("click", () => {
+      if (!isMyTurn()) return;
+      ensureAudio();
+      hideQuestion();
+      socket.emit("spin-wheel");
+    });
+
+    document.querySelectorAll(".mystery-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        if (!isMyTurn() || card.classList.contains("used")) return;
+        ensureAudio();
+        hideQuestion();
+        socket.emit("pick-card", { cardIndex: Number(card.dataset.cardIndex) });
+      });
+    });
+
+    document.getElementById("shuffleButton").addEventListener("click", () => {
+      if (!isMyTurn()) return;
+      playClick();
+      socket.emit("shuffle-cards");
+    });
+
+    document.querySelectorAll(".deep-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!isMyTurn()) return;
+        ensureAudio();
+        hideQuestion();
+        socket.emit("pick-deep", { level: button.dataset.level });
+      });
+    });
+
+    document.getElementById("followUpButton").addEventListener("click", () => {
+      playClick();
+      if (!state.currentQuestion) return;
+      document.getElementById("followUpText").classList.remove("hidden");
+    });
+
+    document.getElementById("answeredButton").addEventListener("click", () => {
+      if (!isMyTurn() || !state.currentQuestion) return;
+      playClick();
+      socket.emit("complete-turn", { connected: false });
+    });
+
+    document.getElementById("connectedButton").addEventListener("click", () => {
+      if (!isMyTurn() || !state.currentQuestion) return;
+      playPoint();
+      burst();
+      socket.emit("complete-turn", { connected: true });
+    });
+
+    document.getElementById("passButton").addEventListener("click", () => {
+      if (!isMyTurn() || !state.currentQuestion) return;
+      playClick();
+      socket.emit("pass-turn");
+    });
+
+    socket.on("connect", () => {
+      setConnection("Connected", true);
+      state.myId = socket.id;
+
+      if (state.rejoinCode && state.rejoinName) {
+        setTimeout(() => {
+          socket.emit("join-room", {
+            roomCode: state.rejoinCode,
+            name: state.rejoinName,
+            playerToken: clientToken
+          }, (result) => {
+            if (result.ok) {
+              enterGame(result, { silent: true });
+              showToast("Reconnected to room " + result.roomCode + ".");
+            } else {
+              sessionStorage.removeItem("uncoverRoom");
+              state.rejoinCode = null;
+              showToast(result.error || "Could not rejoin the room.");
+            }
+          });
+        }, 250);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      setConnection("Reconnecting", false);
+      showToast("Connection lost. Reconnecting…");
+    });
+
+    socket.on("room-state", (room) => {
+      renderState(room);
+    });
+
+    socket.on("mode-changed", ({ mode }) => {
+      setModePanels(mode);
+      playClick();
+    });
+
+    socket.on("wheel-spun", ({ angle, duration, question }) => {
+      hideQuestion();
+      state.pendingReveal = true;
+      state.wheelRotation += angle;
+      wheel.style.transitionDuration = duration + "ms";
+      wheel.style.transform = "rotate(" + state.wheelRotation + "deg)";
+      showToast(activePlayerName() + " spun the wheel…");
+
+      let ticks = 0;
+      const tickTimer = setInterval(() => {
+        tone(170 + ticks * 10, .03, "square", .012);
+        ticks += 1;
+      }, 105);
+
+      clearTimeout(state.revealTimer);
+      state.revealTimer = setTimeout(() => {
+        clearInterval(tickTimer);
+        revealQuestion(question);
+      }, duration);
+    });
+
+    socket.on("card-picked", ({ cardIndex, duration, question }) => {
+      hideQuestion();
+      state.pendingReveal = true;
+      const card = document.querySelector('[data-card-index="' + cardIndex + '"]');
+      if (card) {
+        card.classList.add("used");
+        card.querySelector("span").textContent = "✓";
+      }
+      playFlip();
+      showToast("A mystery card was selected…");
+      clearTimeout(state.revealTimer);
+      state.revealTimer = setTimeout(() => revealQuestion(question), duration);
+    });
+
+    socket.on("cards-shuffled", () => {
+      document.querySelectorAll(".mystery-card").forEach((card, index) => {
+        const symbols = ["?", "★", "↗", "◌", "!", "∞"];
+        card.classList.remove("used");
+        card.querySelector("span").textContent = symbols[index];
+      });
+      playFlip();
+      showToast("Cards shuffled.");
+    });
+
+    socket.on("deep-picked", ({ duration, question }) => {
+      hideQuestion();
+      state.pendingReveal = true;
+      playFlip();
+      showToast("A deeper question is opening…");
+      clearTimeout(state.revealTimer);
+      state.revealTimer = setTimeout(() => revealQuestion(question), duration);
+    });
+
+    socket.on("turn-completed", ({ connected }) => {
+      hideQuestion();
+      if (connected) {
+        playPoint();
+        burst();
+        showToast("Connection point added.");
+      } else {
+        showToast("Turn complete.");
+      }
+    });
+
+    socket.on("turn-passed", () => {
+      hideQuestion();
+      playClick();
+      showToast("Pass respected. No explanation required.");
+    });
+
+    socket.on("player-left", () => {
+      hideQuestion();
+      showToast(otherPlayerName() + " disconnected.");
+    });
+  </script>
+</body>
+</html>
