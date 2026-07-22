@@ -17,6 +17,7 @@
       --accent-2: #76d9c8;
       --accent-3: #ffb477;
       --danger: #ff8181;
+      --warn: #ffcf6b;
       --shadow: 0 18px 55px rgba(0,0,0,.35);
     }
 
@@ -505,6 +506,82 @@
       color: var(--muted);
     }
 
+    /* ---- Adult "Menu" mode ---- */
+    .menu-section { margin: 14px 0 4px; font-weight: 850; font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+    .menu-options { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .menu-option {
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 12px;
+      font-weight: 600;
+    }
+    .menu-option .tick {
+      width: 18px; height: 18px; flex: none;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      display: inline-grid; place-items: center;
+      font-size: .8rem; color: #18121f;
+    }
+    .menu-option.selected { border-color: var(--accent); background: rgba(185,145,255,.14); }
+    .menu-option.selected .tick { background: var(--accent); border-color: transparent; }
+    .menu-option.selected .tick::after { content: "✓"; }
+
+    .menu-review { display: grid; gap: 10px; margin-top: 12px; }
+    .menu-review-row {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 12px;
+      display: grid;
+      gap: 9px;
+    }
+    .menu-review-row .label { font-weight: 700; }
+    .resp-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .resp-btn { padding: 8px 6px; font-weight: 800; font-size: .86rem; }
+    .resp-btn[data-value="yes"].on { background: var(--accent); color: #18121f; border-color: transparent; }
+    .resp-btn[data-value="maybe"].on { background: var(--warn); color: #241a04; border-color: transparent; }
+    .resp-btn[data-value="no"].on { background: rgba(255,129,129,.2); color: var(--danger); border-color: transparent; }
+
+    .menu-result { display: grid; gap: 8px; margin: 12px 0; }
+    .menu-result-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      border: 1px solid var(--border);
+      border-left-width: 4px;
+      border-radius: 12px;
+      padding: 10px 13px;
+      font-weight: 700;
+    }
+    .menu-result-row .verdict { font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .menu-result-row.yes { border-left-color: var(--accent); }
+    .menu-result-row.yes .verdict { color: var(--accent); }
+    .menu-result-row.maybe { border-left-color: var(--warn); }
+    .menu-result-row.maybe .verdict { color: var(--warn); }
+    .menu-result-row.no { border-left-color: var(--danger); opacity: .55; }
+    .menu-result-row.no .label { text-decoration: line-through; }
+    .menu-result-row.no .verdict { color: var(--danger); }
+    .menu-safety { margin-top: 6px; font-size: .82rem; color: var(--muted); text-align: center; }
+
+    /* ---- 18+ gate ---- */
+    .adult-gate {
+      position: fixed; inset: 0; z-index: 70;
+      display: grid; place-items: center;
+      padding: 24px;
+      background: rgba(8,7,12,.72);
+      backdrop-filter: blur(8px);
+    }
+    .adult-gate .gate-card {
+      width: min(100%, 400px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      text-align: center;
+    }
+    .adult-gate .gate-emoji { font-size: 2rem; }
+    .adult-gate .gate-actions { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 16px; }
+
     .question-wrap {
       margin-top: 14px;
       perspective: 1000px;
@@ -739,6 +816,7 @@
           <button type="button" class="btn mode-button active" data-mode="wheel">Wheel</button>
           <button type="button" class="btn mode-button" data-mode="cards">Cards</button>
           <button type="button" class="btn mode-button" data-mode="deep">Deeper</button>
+          <button type="button" class="btn mode-button" data-mode="menu"><span class="menu-lock" aria-hidden="true">🔒 </span>Menu</button>
         </div>
 
         <section id="wheelPanel">
@@ -848,6 +926,48 @@
           </div>
         </section>
 
+        <section id="menuPanel" class="hidden">
+          <!-- Proposer picks a set of options -->
+          <div id="menuSelect" class="hidden">
+            <h2>Pick tonight's menu</h2>
+            <p class="muted small">Choose anything you're in the mood for, then send it over. They'll say Yes, Maybe, or No to each — nothing's on unless you both agree.</p>
+            <div id="menuOptions"></div>
+            <button id="menuSendButton" type="button" class="btn primary" style="width:100%;margin-top:14px" disabled>Send to partner</button>
+          </div>
+
+          <!-- Proposer waits while partner responds -->
+          <div id="menuWaiting" class="hidden lock-note">
+            Sent. Waiting for <span id="menuWaitName">your partner</span> to respond…
+          </div>
+
+          <!-- Partner responds Yes / Maybe / No -->
+          <div id="menuRespond" class="hidden">
+            <h2><span id="menuProposerName">Your partner</span> sent a menu</h2>
+            <p class="muted small">Say Yes, Maybe, or No to each. No is always okay — no reason needed.</p>
+            <div id="menuReview" class="menu-review"></div>
+            <button id="menuShareButton" type="button" class="btn primary" style="width:100%;margin-top:14px">Share our menu</button>
+          </div>
+
+          <!-- Both partners see the agreed result -->
+          <div id="menuResult" class="hidden">
+            <h2>Tonight's menu</h2>
+            <div id="menuResultList" class="menu-result"></div>
+            <p class="menu-safety">Agree on a word or signal that means stop — either of you can use it anytime, no explanation needed.</p>
+            <button id="menuClearButton" type="button" class="btn danger" style="width:100%">Clear / start over</button>
+          </div>
+
+          <!-- Partner is waiting for the proposer to build a menu -->
+          <div id="menuIdle" class="hidden lock-note">
+            <span id="menuIdleName">Your partner</span> is choosing tonight's menu. Your screen will update automatically.
+          </div>
+
+          <!-- Partner hasn't confirmed 18+ yet, but a menu is ready -->
+          <div id="menuLocked" class="hidden lock-note">
+            <p style="margin:0 0 12px"><span id="menuLockedName">Your partner</span> shared an adult menu with you.</p>
+            <button id="menuUnlockButton" type="button" class="btn primary">View (18+)</button>
+          </div>
+        </section>
+
         <div class="question-wrap">
           <article id="questionCard" class="question-card">
             <div>
@@ -873,6 +993,18 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <div id="adultGate" class="adult-gate hidden" role="dialog" aria-modal="true" aria-labelledby="adultGateTitle">
+    <div class="gate-card">
+      <div class="gate-emoji" aria-hidden="true">🔞</div>
+      <h2 id="adultGateTitle">Adults only</h2>
+      <p class="muted small">The Menu is explicit, adult content for the two of you. Please confirm you are 18 or older to continue.</p>
+      <div class="gate-actions">
+        <button id="adultCancel" type="button" class="btn ghost">Not now</button>
+        <button id="adultConfirm" type="button" class="btn primary">I'm 18 or older</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
@@ -885,7 +1017,10 @@
       revealTimer: null,
       soundsEnabled: true,
       rejoinCode: null,
-      rejoinName: null
+      rejoinName: null,
+      menuCatalog: null,
+      menuSelection: new Set(),
+      menuResponses: {}
     };
 
     const lobbyScreen = document.getElementById("lobbyScreen");
@@ -1198,11 +1333,17 @@
 
       document.querySelectorAll(".mode-button").forEach((button) => {
         button.classList.toggle("active", button.dataset.mode === room.mode);
-        button.disabled = !isMyTurn() || room.players.length < 2 ||
+        // The partner can always see a shared/responding menu, so the Menu button
+        // stays live for them while a menu is active even though it's not their turn.
+        const menuLive = button.dataset.mode === "menu" && room.menu;
+        button.disabled = (!isMyTurn() && !menuLive) || room.players.length < 2 ||
           (button.dataset.mode === "deep" && !room.deeperUnlocked);
+        const lock = button.querySelector(".menu-lock");
+        if (lock) lock.classList.toggle("hidden", adultConfirmed());
       });
 
       setModePanels(room.mode);
+      renderMenu(room);
 
       document.getElementById("deepLocked").classList.toggle("hidden", room.deeperUnlocked);
       document.getElementById("deepUnlocked").classList.toggle("hidden", !room.deeperUnlocked);
@@ -1240,8 +1381,182 @@
       document.getElementById("wheelPanel").classList.toggle("hidden", mode !== "wheel");
       document.getElementById("cardsPanel").classList.toggle("hidden", mode !== "cards");
       document.getElementById("deepPanel").classList.toggle("hidden", mode !== "deep");
+      document.getElementById("menuPanel").classList.toggle("hidden", mode !== "menu");
       document.querySelectorAll(".mode-button").forEach((button) => {
         button.classList.toggle("active", button.dataset.mode === mode);
+      });
+    }
+
+    // ---- Adult "Menu" mode (18+) ----
+    const ADULT_KEY = "uncoverAdult18";
+    let adultGateResolve = null;
+
+    function adultConfirmed() {
+      try { return localStorage.getItem(ADULT_KEY) === "1"; } catch (e) { return false; }
+    }
+
+    // Shows the 18+ gate if needed; resolves true only once the device confirms.
+    function ensureAdult() {
+      if (adultConfirmed()) return Promise.resolve(true);
+      document.getElementById("adultGate").classList.remove("hidden");
+      return new Promise((resolve) => { adultGateResolve = resolve; });
+    }
+
+    document.getElementById("adultConfirm").addEventListener("click", () => {
+      try { localStorage.setItem(ADULT_KEY, "1"); } catch (e) {}
+      document.getElementById("adultGate").classList.add("hidden");
+      const resolve = adultGateResolve; adultGateResolve = null;
+      if (resolve) resolve(true);
+      if (state.room) renderState(state.room);
+    });
+
+    document.getElementById("adultCancel").addEventListener("click", () => {
+      document.getElementById("adultGate").classList.add("hidden");
+      const resolve = adultGateResolve; adultGateResolve = null;
+      if (resolve) resolve(false);
+    });
+
+    function loadMenuCatalog() {
+      if (state.menuCatalog) return Promise.resolve(state.menuCatalog);
+      return fetch("/api/menu-catalog")
+        .then((r) => r.json())
+        .then((data) => { state.menuCatalog = data.sections || {}; return state.menuCatalog; })
+        .catch(() => ({}));
+    }
+
+    function menuOptionLabel(id) {
+      if (!state.menuCatalog) return id;
+      const sep = id.lastIndexOf(":");
+      const section = id.slice(0, sep);
+      const idx = Number(id.slice(sep + 1));
+      const arr = state.menuCatalog[section];
+      return (arr && arr[idx]) || id;
+    }
+
+    function renderMenu(room) {
+      const menu = room.menu;
+      const iAmProposer = Boolean(menu && menu.proposedBy === state.myId);
+      const views = ["menuSelect", "menuWaiting", "menuRespond", "menuResult", "menuIdle", "menuLocked"];
+      views.forEach((id) => document.getElementById(id).classList.add("hidden"));
+      if (room.mode !== "menu") return;
+
+      // A menu with real options exists but this device hasn't confirmed 18+ yet.
+      if (menu && !iAmProposer && !adultConfirmed()) {
+        document.getElementById("menuLocked").classList.remove("hidden");
+        document.getElementById("menuLockedName").textContent = menu.proposedByName || "Your partner";
+        return;
+      }
+
+      if (!menu) {
+        if (isMyTurn()) {
+          document.getElementById("menuSelect").classList.remove("hidden");
+          renderMenuOptions();
+        } else {
+          document.getElementById("menuIdle").classList.remove("hidden");
+          document.getElementById("menuIdleName").textContent = activePlayerName() || "Your partner";
+        }
+        return;
+      }
+
+      if (menu.phase === "responding") {
+        if (iAmProposer) {
+          document.getElementById("menuWaiting").classList.remove("hidden");
+          document.getElementById("menuWaitName").textContent = otherPlayerName();
+        } else {
+          document.getElementById("menuRespond").classList.remove("hidden");
+          document.getElementById("menuProposerName").textContent = menu.proposedByName || "Your partner";
+          renderMenuReview(menu);
+        }
+        return;
+      }
+
+      if (menu.phase === "shared") {
+        document.getElementById("menuResult").classList.remove("hidden");
+        renderMenuResult(menu);
+      }
+    }
+
+    function renderMenuOptions() {
+      const wrap = document.getElementById("menuOptions");
+      if (!state.menuCatalog) {
+        wrap.innerHTML = '<p class="muted small">Loading…</p>';
+        loadMenuCatalog().then(() => { if (state.room) renderMenu(state.room); });
+        return;
+      }
+      wrap.innerHTML = "";
+      Object.entries(state.menuCatalog).forEach(([section, items]) => {
+        const head = document.createElement("div");
+        head.className = "menu-section";
+        head.textContent = section;
+        wrap.appendChild(head);
+        const grid = document.createElement("div");
+        grid.className = "menu-options";
+        items.forEach((label, i) => {
+          const id = section + ":" + i;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn menu-option" + (state.menuSelection.has(id) ? " selected" : "");
+          btn.innerHTML = '<span class="tick"></span><span class="opt-label"></span>';
+          btn.querySelector(".opt-label").textContent = label;
+          btn.addEventListener("click", () => {
+            if (state.menuSelection.has(id)) state.menuSelection.delete(id);
+            else state.menuSelection.add(id);
+            btn.classList.toggle("selected");
+            updateMenuSendButton();
+          });
+          grid.appendChild(btn);
+        });
+        wrap.appendChild(grid);
+      });
+      updateMenuSendButton();
+    }
+
+    function updateMenuSendButton() {
+      document.getElementById("menuSendButton").disabled = state.menuSelection.size === 0 || !isMyTurn();
+    }
+
+    function renderMenuReview(menu) {
+      const wrap = document.getElementById("menuReview");
+      wrap.innerHTML = "";
+      menu.options.forEach((id) => {
+        const row = document.createElement("div");
+        row.className = "menu-review-row";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = menuOptionLabel(id);
+        row.appendChild(label);
+        const btns = document.createElement("div");
+        btns.className = "resp-btns";
+        [["yes", "Yes"], ["maybe", "Maybe"], ["no", "No"]].forEach(([val, text]) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn resp-btn" + (state.menuResponses[id] === val ? " on" : "");
+          b.dataset.value = val;
+          b.textContent = text;
+          b.addEventListener("click", () => {
+            state.menuResponses[id] = val;
+            btns.querySelectorAll(".resp-btn").forEach((x) => x.classList.toggle("on", x.dataset.value === val));
+          });
+          btns.appendChild(b);
+        });
+        row.appendChild(btns);
+        wrap.appendChild(row);
+      });
+    }
+
+    function renderMenuResult(menu) {
+      const wrap = document.getElementById("menuResultList");
+      wrap.innerHTML = "";
+      const order = { yes: 0, maybe: 1, no: 2 };
+      const rows = menu.options.map((id) => ({ id, v: menu.responses[id] || "no" }));
+      rows.sort((a, b) => order[a.v] - order[b.v]);
+      rows.forEach(({ id, v }) => {
+        const row = document.createElement("div");
+        row.className = "menu-result-row " + v;
+        row.innerHTML = '<span class="label"></span><span class="verdict"></span>';
+        row.querySelector(".label").textContent = menuOptionLabel(id);
+        row.querySelector(".verdict").textContent = v;
+        wrap.appendChild(row);
       });
     }
 
@@ -1379,9 +1694,20 @@
 
     document.querySelectorAll(".mode-button").forEach((button) => {
       button.addEventListener("click", () => {
+        const mode = button.dataset.mode;
+        if (mode === "menu") {
+          if (!isMyTurn()) return;
+          ensureAdult().then((ok) => {
+            if (!ok) return;
+            playClick();
+            loadMenuCatalog();
+            socket.emit("set-mode", { mode: "menu" });
+          });
+          return;
+        }
         if (!isMyTurn()) return;
         playClick();
-        socket.emit("set-mode", { mode: button.dataset.mode });
+        socket.emit("set-mode", { mode });
       });
     });
 
@@ -1405,6 +1731,29 @@
       if (!isMyTurn()) return;
       playClick();
       socket.emit("shuffle-cards");
+    });
+
+    document.getElementById("menuSendButton").addEventListener("click", () => {
+      if (!isMyTurn() || state.menuSelection.size === 0) return;
+      playClick();
+      socket.emit("menu-propose", { options: [...state.menuSelection] });
+    });
+
+    document.getElementById("menuShareButton").addEventListener("click", () => {
+      playClick();
+      socket.emit("menu-respond", { responses: state.menuResponses });
+    });
+
+    document.getElementById("menuClearButton").addEventListener("click", () => {
+      playClick();
+      socket.emit("menu-clear");
+    });
+
+    document.getElementById("menuUnlockButton").addEventListener("click", () => {
+      ensureAdult().then((ok) => {
+        if (!ok) return;
+        loadMenuCatalog().then(() => { if (state.room) renderMenu(state.room); });
+      });
     });
 
     document.querySelectorAll(".deep-button").forEach((button) => {
@@ -1494,6 +1843,24 @@
       playFlip();
       const who = by || "Someone";
       showToast(who + " switched to the " + (emoji || "") + " " + label + " deck.");
+    });
+
+    // ---- Adult "Menu" mode events (room-state does the re-render) ----
+    socket.on("menu-proposed", ({ by }) => {
+      state.menuResponses = {};
+      playFlip();
+      if (by !== state.myId) showToast(otherPlayerName() + " sent you a menu 🔥");
+    });
+
+    socket.on("menu-responded", () => {
+      playReveal();
+      burst();
+    });
+
+    socket.on("menu-cleared", () => {
+      state.menuSelection.clear();
+      state.menuResponses = {};
+      playClick();
     });
 
     socket.on("wheel-spun", ({ angle, duration, question }) => {

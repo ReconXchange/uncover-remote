@@ -18,6 +18,14 @@ Either player can switch the deck at any time. It changes the pool the wheel and
 There is also a **Deeper** mode that unlocks after five rounds, with Reflection, Vulnerable,
 and About-Us questions. Anyone can tap **Pass** on any question — no explanation needed.
 
+## Menu (18+)
+
+A private **Menu** mode for adults only. One of you picks a set of options (toys and
+kinds of play), sends them over, and the other responds **Yes / Maybe / No** to each — so
+nothing is on the table unless you both agree. It's hidden behind a one-time 18+
+confirmation, and either of you can tap **Clear / start over** at any time. All options live
+in the `MENU_OPTIONS` object in `server.js`, so you can edit or add your own freely.
+
 ## How to play
 
 1. One person taps **Create a private room** and gets an invite link.

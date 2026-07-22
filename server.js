@@ -375,6 +375,40 @@ const DEEP_QUESTIONS = {
   ]
 };
 
+/*
+  ADULT MENU (18+)
+  A single sexual "options menu". One partner (the proposer) selects a set of
+  options and sends them over; the other responds Yes / Maybe / No per option,
+  and both phones see the shared, color-coded result. The Yes/Maybe/No response
+  is the consent step — nothing is "on" unless the other person agrees.
+  Add or reword freely; each option's id stays "<section>:<index>".
+*/
+const MENU_OPTIONS = {
+  Toys: [
+    "Anal plug",
+    "Restraints",
+    "Blindfold",
+    "Clitoral suction toy",
+    "Dildo",
+    "Spanking toy / paddle",
+    "Oil / massage oil"
+  ],
+  Play: [
+    "Choking / breath play",
+    "Dirty talk",
+    "Teasing & edging"
+  ]
+};
+
+// Flat set of every valid option id, so proposals can be validated cheaply.
+const MENU_OPTION_IDS = new Set(
+  Object.entries(MENU_OPTIONS).flatMap(([section, items]) =>
+    items.map((_, i) => `${section}:${i}`)
+  )
+);
+
+const MENU_RESPONSE_VALUES = new Set(["yes", "maybe", "no"]);
+
 const DEFAULT_PACK = "reconnect";
 const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -433,6 +467,7 @@ function serializeRoom(room) {
     currentQuestion: room.currentQuestion,
     followUpRevealed: Boolean(room.followUpRevealed),
     usedCards: room.usedCards,
+    menu: room.menu || null,
     deeperUnlocked: room.round >= 5,
     readyIds: ready,
     bothReady: room.players.length === 2 && ready.length === 2
@@ -453,6 +488,12 @@ app.get("/api/room/:code", (req, res) => {
     players: room.players.length,
     full: room.players.length >= 2
   });
+});
+
+// The explicit option list is only handed out on request (after the client's
+// 18+ gate), so it is never part of the constant room-state broadcast.
+app.get("/api/menu-catalog", (req, res) => {
+  res.json({ sections: MENU_OPTIONS });
 });
 
 function getRoomForSocket(socket) {
@@ -544,6 +585,7 @@ io.on("connection", (socket) => {
       currentQuestion: null,
       followUpRevealed: false,
       usedCards: [],
+      menu: null,
       ready: new Set(),
       cleanupTimer: null
     };
@@ -580,7 +622,7 @@ io.on("connection", (socket) => {
   socket.on("set-mode", ({ mode } = {}) => {
     const room = getRoomForSocket(socket);
     if (!canAct(socket, room)) return;
-    if (!["wheel", "cards", "deep"].includes(mode)) return;
+    if (!["wheel", "cards", "deep", "menu"].includes(mode)) return;
     if (mode === "deep" && room.round < 5) return;
     room.mode = mode;
     io.to(room.code).emit("mode-changed", { mode, by: socket.id });
@@ -688,6 +730,57 @@ io.on("connection", (socket) => {
     emitState(room);
   });
 
+  // ---- Adult "Menu" mode (18+, gated on the client) ----
+
+  // The proposer (whoever's turn it is) picks a set of options and sends them.
+  socket.on("menu-propose", ({ options } = {}) => {
+    const room = getRoomForSocket(socket);
+    if (!canAct(socket, room) || room.players.length < 2) return;
+    const picked = Array.isArray(options)
+      ? [...new Set(options.filter((id) => MENU_OPTION_IDS.has(id)))]
+      : [];
+    if (picked.length === 0) return;
+    const who = room.players.find((p) => p.id === socket.id);
+    room.mode = "menu";
+    room.menu = {
+      phase: "responding",
+      proposedBy: socket.id,
+      proposedByName: who ? who.name : "",
+      options: picked,
+      responses: {}
+    };
+    io.to(room.code).emit("menu-proposed", { by: socket.id });
+    emitState(room);
+  });
+
+  // The partner answers Yes / Maybe / No per option — this is the consent step.
+  socket.on("menu-respond", ({ responses } = {}) => {
+    const room = getRoomForSocket(socket);
+    if (!inRoom(socket, room) || !room.menu || room.menu.phase !== "responding") return;
+    // Only the partner (not the proposer) may respond.
+    if (room.menu.proposedBy === socket.id) return;
+    const clean = {};
+    if (responses && typeof responses === "object") {
+      for (const id of room.menu.options) {
+        const value = responses[id];
+        if (MENU_RESPONSE_VALUES.has(value)) clean[id] = value;
+      }
+    }
+    room.menu.responses = clean;
+    room.menu.phase = "shared";
+    io.to(room.code).emit("menu-responded", { by: socket.id });
+    emitState(room);
+  });
+
+  // Either partner can stop / start over at any time.
+  socket.on("menu-clear", () => {
+    const room = getRoomForSocket(socket);
+    if (!inRoom(socket, room)) return;
+    room.menu = null;
+    io.to(room.code).emit("menu-cleared");
+    emitState(room);
+  });
+
   // Marking a turn Answered / Great answer is the listener's call, not the answerer's.
   socket.on("complete-turn", ({ connected = false } = {}) => {
     const room = getRoomForSocket(socket);
@@ -742,6 +835,7 @@ io.on("connection", (socket) => {
       room.currentPlayerId = room.players[0]?.id || null;
       room.currentQuestion = null;
       room.followUpRevealed = false;
+      room.menu = null;
     }
 
     if (room.players.length === 0) {
