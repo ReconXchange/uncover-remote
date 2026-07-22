@@ -14,6 +14,9 @@ Either player can switch the deck at any time. It changes the pool the wheel and
 - **❤️ Us** — appreciation, your shared story, understanding, trust, repair, and your future.
 - **😄 Playful** — light, silly, would-you-rathers, and gentle dares to break the tension.
 - **🔥 Spicy** — flirty and intimate, just for the two of you.
+- **😈 Erotic (18+)** — explicit, adults-only dares and questions. Hidden behind a one-time
+  age confirmation. Flip on **Play erotic only** and the tame decks step aside so every
+  spin and card stays erotic; either of you can turn it back off anytime.
 
 There is also a **Deeper** mode that unlocks after five rounds, with Reflection, Vulnerable,
 and About-Us questions. Anyone can tap **Pass** on any question — no explanation needed.

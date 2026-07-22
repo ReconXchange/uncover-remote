@@ -236,7 +236,7 @@
 
     .pack-tabs {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
+      grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
       gap: 8px;
       margin-bottom: 6px;
     }
@@ -262,6 +262,39 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 1px var(--accent);
     }
+    .pack-button.locked { border-style: dashed; opacity: .78; }
+    .pack-button.locked .pack-name::before { content: "🔒 "; }
+
+    /* ---- "Play erotic only" toggle ---- */
+    .erotic-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 2px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .erotic-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .erotic-toggle-track {
+      flex: none;
+      width: 42px; height: 24px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.14);
+      border: 1px solid var(--border);
+      transition: background .18s ease;
+      position: relative;
+    }
+    .erotic-toggle-thumb {
+      position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform .18s ease;
+    }
+    .erotic-toggle input:checked + .erotic-toggle-track { background: #ff4d6d; border-color: transparent; }
+    .erotic-toggle input:checked + .erotic-toggle-track .erotic-toggle-thumb { transform: translateX(18px); }
+    .erotic-toggle input:focus-visible + .erotic-toggle-track { outline: 3px solid rgba(255,77,109,.45); outline-offset: 2px; }
+    .erotic-toggle-label { font-weight: 800; font-size: .84rem; }
 
     /* ---- Invite panel ---- */
     .invite-panel {
@@ -302,6 +335,7 @@
     body[data-pack="us"] { --accent: #ff8faf; --accent-2: #ffb3c8; }
     body[data-pack="playful"] { --accent: #ffce5c; --accent-2: #76d9c8; }
     body[data-pack="spicy"] { --accent: #ff6b6b; --accent-2: #ff9e7d; }
+    body[data-pack="erotic"] { --accent: #ff4d6d; --accent-2: #c65cff; }
 
     /* ---- Intro "we're both here" moment ---- */
     .intro-overlay {
@@ -809,6 +843,11 @@
           <span class="deck-title">Deck</span>
           <span class="small muted">Either of you can switch it</span>
         </div>
+        <label id="eroticToggle" class="erotic-toggle">
+          <input id="eroticToggleInput" type="checkbox">
+          <span class="erotic-toggle-track" aria-hidden="true"><span class="erotic-toggle-thumb"></span></span>
+          <span class="erotic-toggle-label">Play erotic only <span class="small muted">· 18+</span></span>
+        </label>
         <div id="packTabs" class="pack-tabs"></div>
         <p id="deckBlurb" class="deck-blurb"></p>
 
@@ -1224,32 +1263,41 @@
     function renderPacks(room) {
       const wrap = document.getElementById("packTabs");
       if (!wrap) return;
-      const packs = room.packs || [];
-      if (wrap.dataset.built !== String(packs.length)) {
+      const all = room.packs || [];
+      // Erotic-only sessions collapse the picker to the adult deck(s).
+      const packs = room.eroticOnly ? all.filter((p) => p.adult) : all;
+      const sig = packs.map((p) => p.id).join(",") + "|" + Boolean(room.eroticOnly) + "|" + adultConfirmed();
+      if (wrap.dataset.sig !== sig) {
         wrap.innerHTML = "";
         packs.forEach((p) => {
+          const locked = p.adult && !adultConfirmed();
           const button = document.createElement("button");
           button.type = "button";
-          button.className = "pack-button";
+          button.className = "pack-button" + (locked ? " locked" : "");
           button.dataset.pack = p.id;
           button.innerHTML = '<span class="pack-emoji"></span><span class="pack-name"></span>';
           button.querySelector(".pack-emoji").textContent = p.emoji;
           button.querySelector(".pack-name").textContent = p.label;
           button.addEventListener("click", () => {
             if (button.classList.contains("active")) return;
+            if (p.adult && !adultConfirmed()) {
+              ensureAdult().then((ok) => { if (ok) { playClick(); socket.emit("set-pack", { pack: p.id }); } });
+              return;
+            }
             playClick();
             socket.emit("set-pack", { pack: p.id });
           });
           wrap.appendChild(button);
         });
-        wrap.dataset.built = String(packs.length);
+        wrap.dataset.sig = sig;
       }
       wrap.querySelectorAll(".pack-button").forEach((button) => {
         button.classList.toggle("active", button.dataset.pack === room.pack);
       });
-      const meta = packs.find((p) => p.id === room.pack);
+      const meta = all.find((p) => p.id === room.pack);
       document.getElementById("deckBlurb").textContent = meta ? meta.blurb : "";
       document.body.setAttribute("data-pack", room.pack || "reconnect");
+      document.getElementById("eroticToggleInput").checked = Boolean(room.eroticOnly);
     }
 
     function maybeRenderIntro(room) {
@@ -1333,6 +1381,8 @@
 
       document.querySelectorAll(".mode-button").forEach((button) => {
         button.classList.toggle("active", button.dataset.mode === room.mode);
+        // Deeper is the SFW reflection flow — hide it while erotic-only is on.
+        button.classList.toggle("hidden", button.dataset.mode === "deep" && room.eroticOnly);
         // The partner can always see a shared/responding menu, so the Menu button
         // stays live for them while a menu is active even though it's not their turn.
         const menuLive = button.dataset.mode === "menu" && room.menu;
@@ -1756,6 +1806,19 @@
       });
     });
 
+    document.getElementById("eroticToggleInput").addEventListener("change", (e) => {
+      if (e.target.checked) {
+        ensureAdult().then((ok) => {
+          if (!ok) { e.target.checked = false; return; }
+          playClick();
+          socket.emit("set-erotic-only", { on: true });
+        });
+      } else {
+        playClick();
+        socket.emit("set-erotic-only", { on: false });
+      }
+    });
+
     document.querySelectorAll(".deep-button").forEach((button) => {
       button.addEventListener("click", () => {
         if (!isMyTurn()) return;
@@ -1861,6 +1924,12 @@
       state.menuSelection.clear();
       state.menuResponses = {};
       playClick();
+    });
+
+    socket.on("erotic-only-changed", ({ on, by }) => {
+      playFlip();
+      const who = by || "Someone";
+      showToast(on ? (who + " locked the night to erotic only 😈") : (who + " turned erotic-only off."));
     });
 
     socket.on("wheel-spun", ({ angle, duration, question }) => {

@@ -344,6 +344,90 @@ const PACKS = {
         ["Invent the ideal lazy Sunday for just us two.", "What is the one rule?"]
       ]
     }
+  },
+
+  // 18+ deck. Explicit, adults-only prompts and dares for two consenting
+  // partners. Gated on the client behind a one-time age confirmation. Every
+  // prompt can be passed with no explanation — same Pass button as every deck.
+  erotic: {
+    label: "Erotic",
+    emoji: "😈",
+    blurb: "Explicit, adults-only dares and questions. Pass anything, anytime — and agree on a word that means stop.",
+    adult: true,
+    categories: {
+      "Warm Up": [
+        ["Whisper exactly what you want to do to me later.", "Now say the part you left out."],
+        ["Describe the last time you wanted me but held back.", "What stopped you?"],
+        ["Send me the filthiest thought you've had about me today.", "When did it hit you?"],
+        ["Tell me, in detail, what you want me wearing tonight.", "Or nothing at all?"],
+        ["Set the scene for how you want tonight to start.", "Who makes the first move?"],
+        ["Talk me through what turns you on most right now.", "Show me if words aren't enough."],
+        ["Say the thing you've been too shy to ask for out loud.", "What made it hard to say?"],
+        ["Tease me with what's coming, but give nothing away yet.", "How long can you make me wait?"],
+        ["Tell me where you want to be kissed first.", "And where next?"],
+        ["Describe your favorite way I've ever turned you on.", "Want a repeat?"]
+      ],
+      Touch: [
+        ["Give me a slow oil rub and don't rush a single inch.", "Where do you want my hands next?"],
+        ["Run your hands over me and narrate what you feel.", "What makes you linger?"],
+        ["Show me exactly how you like to be touched.", "Faster or slower?"],
+        ["Trace every place you want kissed with a fingertip.", "Which spot got you first?"],
+        ["Pin my hands and take your time with the rest of me.", "How does that feel?"],
+        ["Warm some oil and work down from my shoulders.", "Tell me when to stop… or not to."],
+        ["Touch me the way you wish I'd touch you.", "Now I'll return it exactly."],
+        ["Find the spot that makes me gasp and stay there.", "Did you already know it?"],
+        ["Undress me one piece at a time, no rushing.", "What do you want to see first?"],
+        ["Press against me and let me feel how much you want this.", "Say it out loud too."]
+      ],
+      Mouth: [
+        ["Kiss me somewhere new and don't ask permission.", "Where next?"],
+        ["Show me your idea of a perfect, unhurried kiss.", "Where does it lead?"],
+        ["Tell me what you want my mouth to do.", "Should I start now?"],
+        ["Describe how you like to be tasted.", "Slow or hungry?"],
+        ["Kiss a trail down my body and don't stop early.", "Where should it end?"],
+        ["Whisper the dirtiest thing right against my ear.", "Say it slower."],
+        ["Tell me your favorite thing to feel against your lips.", "Want it now?"],
+        ["Give me one instruction and I'll use my mouth to follow it.", "Was that right?"],
+        ["Say out loud what you want me begging for.", "How would you make me?"],
+        ["Bite your lip and tell me what you're imagining.", "Show me the rest."]
+      ],
+      Toys: [
+        ["Pick a toy for me to use on you tonight.", "How do you want it used?"],
+        ["Blindfold me and take full control of what happens.", "What's your first move?"],
+        ["Restrain my hands and tell me what you'll do while I can't move.", "Ready when you are."],
+        ["Choose: the plug, the suction, or the paddle first.", "Why that one?"],
+        ["Use a toy on me while you talk me through every second.", "Faster or teasing-slow?"],
+        ["Blindfold me so I only know your touch and your voice.", "What do you want me guessing at?"],
+        ["Tie me down and edge me with your favorite toy.", "How close before you stop?"],
+        ["Pick the toy you've been wanting to try on me.", "What's the fantasy behind it?"],
+        ["Take the paddle and set the pace you want.", "Tell me when to count."],
+        ["Hand me a toy and tell me exactly how you want it.", "Show me if I get it wrong."]
+      ],
+      Control: [
+        ["Give me an order right now and watch me follow it.", "Was I obedient enough?"],
+        ["Take charge for the next ten minutes — I'm yours.", "What's first?"],
+        ["Restrain me and decide when I'm allowed to move.", "How long will you make me wait?"],
+        ["Spank me and make me count each one out loud.", "How many did you have in mind?"],
+        ["Agree on a word that means stop, then take total control.", "What's our word?"],
+        ["Hold me down and tell me I can't touch until you say so.", "How long can you tease me?"],
+        ["Try light breath play — hand at my throat, eyes on me, stop word ready.", "Tell me the second it's too much."],
+        ["Tell me to beg for what I want.", "Will you give in?"],
+        ["Make the rules for tonight and enforce every one.", "What's the penalty for breaking them?"],
+        ["Kneel me down and tell me exactly what you expect.", "Did I earn a reward?"]
+      ],
+      Fantasy: [
+        ["Cast us in a roleplay right now — who are we?", "How does the scene open?"],
+        ["Confess a fantasy you've never said out loud.", "What would it take to try it?"],
+        ["Finish this: 'Tonight I want you to…'", "And after that?"],
+        ["Describe the filthiest scenario you'd love to act out with me.", "Which part first?"],
+        ["Pick a place we shouldn't and tell me what happens there.", "How do we not get caught?"],
+        ["Invent a rule for tonight that neither of us can break.", "What's the dare if we do?"],
+        ["Tell me the fantasy you replay when you're alone.", "Am I in it?"],
+        ["Set up a 'strangers who just met' scene — give me your line.", "Where does it go?"],
+        ["Describe your dream night with zero limits.", "What's the one thing you'd insist on?"],
+        ["Pitch a dare for right now that raises the stakes.", "Truth or dare — your call."]
+      ]
+    }
   }
 };
 
@@ -422,7 +506,8 @@ function packMeta() {
     id,
     label: p.label,
     emoji: p.emoji,
-    blurb: p.blurb
+    blurb: p.blurb,
+    adult: Boolean(p.adult)
   }));
 }
 
@@ -468,6 +553,7 @@ function serializeRoom(room) {
     followUpRevealed: Boolean(room.followUpRevealed),
     usedCards: room.usedCards,
     menu: room.menu || null,
+    eroticOnly: Boolean(room.eroticOnly),
     deeperUnlocked: room.round >= 5,
     readyIds: ready,
     bothReady: room.players.length === 2 && ready.length === 2
@@ -586,6 +672,7 @@ io.on("connection", (socket) => {
       followUpRevealed: false,
       usedCards: [],
       menu: null,
+      eroticOnly: false,
       ready: new Set(),
       cleanupTimer: null
     };
@@ -634,6 +721,8 @@ io.on("connection", (socket) => {
     const room = getRoomForSocket(socket);
     if (!inRoom(socket, room)) return;
     if (!PACKS[pack] || room.pack === pack) return;
+    // While an erotic-only session is on, the pool stays locked to adult decks.
+    if (room.eroticOnly && !PACKS[pack].adult) return;
     room.pack = pack;
     room.usedCards = [];
     const who = room.players.find((p) => p.id === socket.id);
@@ -643,6 +732,27 @@ io.on("connection", (socket) => {
       emoji: PACKS[pack].emoji,
       by: who ? who.name : ""
     });
+    emitState(room);
+  });
+
+  // Either player can lock the whole session to erotic-only play (or unlock it).
+  // 18+ is confirmed on the client before this is emitted.
+  socket.on("set-erotic-only", ({ on } = {}) => {
+    const room = getRoomForSocket(socket);
+    if (!inRoom(socket, room)) return;
+    const next = Boolean(on);
+    if (room.eroticOnly === next) return;
+    room.eroticOnly = next;
+    if (next) {
+      if (!PACKS[room.pack].adult) {
+        room.pack = "erotic";
+        room.usedCards = [];
+      }
+      // Deeper is a SFW flow; drop out of it when locking to erotic-only.
+      if (room.mode === "deep") room.mode = "wheel";
+    }
+    const who = room.players.find((p) => p.id === socket.id);
+    io.to(room.code).emit("erotic-only-changed", { on: next, by: who ? who.name : "" });
     emitState(room);
   });
 
