@@ -1419,25 +1419,31 @@
         button.disabled = !canChoose || !room.deeperUnlocked;
       });
 
-      // The answerer keeps Pass; the listener judges the answer (follow-up,
-      // answered, great answer) so no one grades their own response.
-      const hasQuestion = Boolean(state.currentQuestion);
-      const listening = amListener();
-      // Adult decks swap the judge controls for a partner "I'm in / Pass" choice.
-      const isDare = hasQuestion && Boolean(state.currentQuestion.consent);
-      document.getElementById("questionActions").classList.toggle("hidden", isDare);
-      document.getElementById("dareActions").classList.toggle("hidden", !isDare);
-      document.getElementById("passButton").disabled = !hasQuestion || !isMyTurn();
-      document.getElementById("followUpButton").disabled = !hasQuestion || !listening;
-      document.getElementById("answeredButton").disabled = !hasQuestion || !listening;
-      document.getElementById("connectedButton").disabled = !hasQuestion || !listening;
-      // Only the partner (listener) decides on a dare; the drawer waits.
-      document.getElementById("dareInButton").disabled = !isDare || !listening;
-      document.getElementById("darePassButton").disabled = !isDare || !listening;
+      // Recompute the action controls. Also called from revealQuestion/hideQuestion,
+      // since the question is assigned on a delayed timer after this render runs.
+      updateActionControls();
 
       if (room.currentQuestion && !state.currentQuestion && !state.pendingReveal) {
         revealQuestion(room.currentQuestion);
       }
+    }
+
+    // The answerer keeps Pass; the listener judges the answer (follow-up, answered,
+    // great answer). Adult decks swap the judge controls for the partner's
+    // "I'm in / Pass" choice on the drawn dare.
+    function updateActionControls() {
+      const hasQuestion = Boolean(state.currentQuestion);
+      const listening = amListener();
+      const isDare = hasQuestion && Boolean(state.currentQuestion.consent);
+      document.getElementById("questionActions").classList.toggle("hidden", isDare);
+      document.getElementById("dareActions").classList.toggle("hidden", !isDare);
+      document.getElementById("passButton").disabled = !hasQuestion || !isMyTurn();
+      document.getElementById("followUpButton").disabled = !hasQuestion || isDare || !listening;
+      document.getElementById("answeredButton").disabled = !hasQuestion || isDare || !listening;
+      document.getElementById("connectedButton").disabled = !hasQuestion || isDare || !listening;
+      // Only the partner (listener) decides on a dare; the drawer waits.
+      document.getElementById("dareInButton").disabled = !isDare || !listening;
+      document.getElementById("darePassButton").disabled = !isDare || !listening;
     }
 
     function setModePanels(mode) {
@@ -1630,6 +1636,7 @@
       questionCard.classList.add("hiding");
       document.getElementById("followUpText").classList.add("hidden");
       state.currentQuestion = null;
+      if (state.room) updateActionControls();
     }
 
     function revealQuestion(question) {
@@ -1654,6 +1661,9 @@
       questionCard.classList.remove("hiding");
       void questionCard.offsetWidth;
       questionCard.classList.add("revealed");
+      // The question is only assigned now (after a delayed reveal timer), so
+      // recompute the controls — including whether to show the dare buttons.
+      updateActionControls();
       playReveal();
     }
 
