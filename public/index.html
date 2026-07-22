@@ -1024,6 +1024,12 @@
               <button id="connectedButton" type="button" class="btn secondary">Great answer</button>
               <button id="passButton" type="button" class="btn danger">Pass</button>
             </div>
+
+            <!-- Adult decks: the partner accepts or passes on the drawn dare. -->
+            <div id="dareActions" class="question-actions hidden">
+              <button id="dareInButton" type="button" class="btn primary">I'm in 🔥</button>
+              <button id="darePassButton" type="button" class="btn danger">Pass</button>
+            </div>
           </article>
         </div>
       </div>
@@ -1417,10 +1423,17 @@
       // answered, great answer) so no one grades their own response.
       const hasQuestion = Boolean(state.currentQuestion);
       const listening = amListener();
+      // Adult decks swap the judge controls for a partner "I'm in / Pass" choice.
+      const isDare = hasQuestion && Boolean(state.currentQuestion.consent);
+      document.getElementById("questionActions").classList.toggle("hidden", isDare);
+      document.getElementById("dareActions").classList.toggle("hidden", !isDare);
       document.getElementById("passButton").disabled = !hasQuestion || !isMyTurn();
       document.getElementById("followUpButton").disabled = !hasQuestion || !listening;
       document.getElementById("answeredButton").disabled = !hasQuestion || !listening;
       document.getElementById("connectedButton").disabled = !hasQuestion || !listening;
+      // Only the partner (listener) decides on a dare; the drawer waits.
+      document.getElementById("dareInButton").disabled = !isDare || !listening;
+      document.getElementById("darePassButton").disabled = !isDare || !listening;
 
       if (room.currentQuestion && !state.currentQuestion && !state.pendingReveal) {
         revealQuestion(room.currentQuestion);
@@ -1625,12 +1638,18 @@
       document.getElementById("questionCategory").textContent = question.category;
       document.getElementById("questionText").textContent = question.question;
       document.getElementById("followUpText").textContent = question.followUp;
-      // Honor a follow-up that was already revealed (e.g. after a reconnect).
+      // Adult dares skip the follow-up; the partner just decides I'm in / Pass.
       document.getElementById("followUpText").classList.toggle(
-        "hidden", !(state.room && state.room.followUpRevealed));
-      document.getElementById("answeringPlayer").textContent = isMyTurn()
-        ? "You answer — they'll respond"
-        : activePlayerName() + " answers — your call";
+        "hidden", question.consent || !(state.room && state.room.followUpRevealed));
+      if (question.consent) {
+        document.getElementById("answeringPlayer").textContent = isMyTurn()
+          ? "Sent to " + otherPlayerName() + " — their call"
+          : activePlayerName() + " sent you this — you choose";
+      } else {
+        document.getElementById("answeringPlayer").textContent = isMyTurn()
+          ? "You answer — they'll respond"
+          : activePlayerName() + " answers — your call";
+      }
 
       questionCard.classList.remove("hiding");
       void questionCard.offsetWidth;
@@ -1853,6 +1872,19 @@
       socket.emit("pass-turn");
     });
 
+    document.getElementById("dareInButton").addEventListener("click", () => {
+      if (!amListener() || !state.currentQuestion || !state.currentQuestion.consent) return;
+      playPoint();
+      burst();
+      socket.emit("dare-respond", { accepted: true });
+    });
+
+    document.getElementById("darePassButton").addEventListener("click", () => {
+      if (!amListener() || !state.currentQuestion || !state.currentQuestion.consent) return;
+      playClick();
+      socket.emit("dare-respond", { accepted: false });
+    });
+
     socket.on("connect", () => {
       setConnection("Connected", true);
       state.myId = socket.id;
@@ -2003,6 +2035,18 @@
       hideQuestion();
       playClick();
       showToast("Pass respected. No explanation required.");
+    });
+
+    socket.on("dare-responded", ({ accepted }) => {
+      hideQuestion();
+      if (accepted) {
+        playPoint();
+        burst();
+        showToast("They're in 🔥");
+      } else {
+        playClick();
+        showToast("Passed — on to the next.");
+      }
     });
 
     socket.on("followup-revealed", () => {

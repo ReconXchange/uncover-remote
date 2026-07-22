@@ -770,7 +770,8 @@ io.on("connection", (socket) => {
     room.round += 1;
     room.drawPack = room.pack;
     room.followUpRevealed = false;
-    room.currentQuestion = { category, question, followUp };
+    // Adult decks hand the drawn dare to the partner to accept or pass.
+    room.currentQuestion = { category, question, followUp, consent: Boolean(PACKS[room.pack].adult) };
 
     io.to(room.code).emit("wheel-spun", {
       categoryIndex,
@@ -799,7 +800,8 @@ io.on("connection", (socket) => {
     room.round += 1;
     room.drawPack = room.pack;
     room.followUpRevealed = false;
-    room.currentQuestion = { category, question, followUp };
+    // Adult decks hand the drawn dare to the partner to accept or pass.
+    room.currentQuestion = { category, question, followUp, consent: Boolean(PACKS[room.pack].adult) };
 
     io.to(room.code).emit("card-picked", {
       cardIndex: index,
@@ -921,6 +923,28 @@ io.on("connection", (socket) => {
 
     io.to(room.code).emit("turn-passed", {
       currentPlayerId: room.currentPlayerId
+    });
+    emitState(room);
+  });
+
+  // Adult decks: the drawn dare is sent to the partner, who taps "I'm in" or
+  // "Pass". Their call ends the turn either way — this is the consent step.
+  socket.on("dare-respond", ({ accepted } = {}) => {
+    const room = getRoomForSocket(socket);
+    if (!canJudge(socket, room) || !room.currentQuestion || !room.currentQuestion.consent) return;
+
+    const isIn = Boolean(accepted);
+    if (isIn) room.score += 1;
+
+    room.currentPlayerId = nextPlayerId(room);
+    room.currentQuestion = null;
+    room.followUpRevealed = false;
+
+    io.to(room.code).emit("dare-responded", {
+      accepted: isIn,
+      score: room.score,
+      currentPlayerId: room.currentPlayerId,
+      by: socket.id
     });
     emitState(room);
   });
